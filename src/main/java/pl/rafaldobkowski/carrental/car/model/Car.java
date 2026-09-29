@@ -138,4 +138,34 @@ public class Car {
         this.status = CarStatus.ACTIVE;
         this.description = description;
     }
+
+    public void updateDetails(
+            String brand,
+            String model,
+            Integer productionYear,
+            String registrationNumber,
+            String vin,
+            CarFuelType fuelType,
+            CarTransmissionType transmissionType,
+            CarBodyType bodyType,
+            Integer numberOfSeats,
+            CarCategory category,
+            String color,
+            BigDecimal dailyPrice,
+            String description
+    ) {
+        this.brand = brand;
+        this.model = model;
+        this.productionYear = productionYear;
+        this.registrationNumber = registrationNumber;
+        this.vin = vin;
+        this.fuelType = fuelType;
+        this.transmissionType = transmissionType;
+        this.bodyType = bodyType;
+        this.numberOfSeats = numberOfSeats;
+        this.category = category;
+        this.color = color;
+        this.dailyPrice = dailyPrice;
+        this.description = description;
+    }
 }
