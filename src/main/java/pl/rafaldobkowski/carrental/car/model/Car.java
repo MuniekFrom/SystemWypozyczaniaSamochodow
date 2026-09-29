@@ -168,4 +168,9 @@ public class Car {
         this.dailyPrice = dailyPrice;
         this.description = description;
     }
+
+    // Zmienia status samochodu
+    public void changeStatus(CarStatus newStatus) {
+        this.status = newStatus;
+    }
 }

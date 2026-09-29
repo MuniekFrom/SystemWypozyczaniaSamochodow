@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import pl.rafaldobkowski.carrental.car.exception.CarAlreadyExistsException;
 import pl.rafaldobkowski.carrental.car.exception.CarNotFoundException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import java.util.stream.Collectors;
 import java.time.Instant;
 
 
@@ -45,6 +47,36 @@ public class GlobalExceptionHandler {
                 status.value(),
                 status.getReasonPhrase(),
                 exception.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(status)
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiErrorResponse> handleValidationException(
+            MethodArgumentNotValidException exception,
+            HttpServletRequest request) {
+
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+
+        String message = exception.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(fieldError ->
+                        fieldError.getField()
+                                + ": "
+                                + fieldError.getDefaultMessage()
+                )
+                .collect(Collectors.joining(", "));
+
+        ApiErrorResponse errorResponse = new ApiErrorResponse(
+                Instant.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                message,
                 request.getRequestURI()
         );
 

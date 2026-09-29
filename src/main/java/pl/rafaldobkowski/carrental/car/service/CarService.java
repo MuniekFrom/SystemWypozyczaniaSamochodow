@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rafaldobkowski.carrental.car.dto.CarResponse;
 import pl.rafaldobkowski.carrental.car.dto.CreateCarRequest;
+import pl.rafaldobkowski.carrental.car.dto.UpdateCarStatusRequest;
 import pl.rafaldobkowski.carrental.car.exception.CarAlreadyExistsException;
 import pl.rafaldobkowski.carrental.car.exception.CarNotFoundException;
 import pl.rafaldobkowski.carrental.car.model.Car;
@@ -17,11 +18,11 @@ public class CarService {
 
     private final CarRepository carRepository;
 
-    public CarService(CarRepository carRepository){
+    public CarService(CarRepository carRepository) {
         this.carRepository = carRepository;
     }
 
-    private CarResponse mapToResponse(Car car){
+    private CarResponse mapToResponse(Car car) {
         return new CarResponse(
                 car.getId(),
                 car.getBrand(),
@@ -42,13 +43,13 @@ public class CarService {
     }
 
     @Transactional
-    public CarResponse createCar(CreateCarRequest request){
+    public CarResponse createCar(CreateCarRequest request) {
 
-        if (carRepository.existsByVin(request.vin())){
+        if (carRepository.existsByVin(request.vin())) {
             throw new CarAlreadyExistsException("Car with this VIN already exists");
         }
 
-        if(carRepository.existsByRegistrationNumber(request.registrationNumber())){
+        if (carRepository.existsByRegistrationNumber(request.registrationNumber())) {
             throw new CarAlreadyExistsException("Car with this registration number already exists");
         }
 
@@ -71,7 +72,7 @@ public class CarService {
     }
 
     @Transactional(readOnly = true)
-    public List<CarResponse> getAllCars(){
+    public List<CarResponse> getAllCars() {
         return carRepository.findAll()
                 .stream()
                 .map(this::mapToResponse)
@@ -79,12 +80,10 @@ public class CarService {
     }
 
     @Transactional(readOnly = true)
-    public CarResponse getCarById(Long id){
-        Car car = carRepository.findById(id)
-                .orElseThrow(() -> new CarNotFoundException(
-                        "Car with id " + id + " was not found."
-                    )
-                );
+    public CarResponse getCarById(Long id) {
+
+        Car car = findCarByIdOrThrow(id);
+
         return mapToResponse(car);
     }
 
@@ -92,17 +91,13 @@ public class CarService {
     @Transactional
     public CarResponse updateCar(Long id, UpdateCarRequest request) {
 
-        Car car = carRepository.findById(id)
-                .orElseThrow(() ->
-                        new CarNotFoundException(
-                                "Car with id " + id + " was not found."
-                        )
-                );
-        if(carRepository.existsByVinAndIdNot(request.vin(), id)){
+        Car car = findCarByIdOrThrow(id);
+
+        if (carRepository.existsByVinAndIdNot(request.vin(), id)) {
             throw new CarAlreadyExistsException("Car with this VIN already exists");
         }
 
-        if(carRepository.existsByRegistrationNumberAndIdNot(request.registrationNumber(), id)){
+        if (carRepository.existsByRegistrationNumberAndIdNot(request.registrationNumber(), id)) {
             throw new CarAlreadyExistsException("Car with this registration number already exists");
         }
 
@@ -125,5 +120,25 @@ public class CarService {
         return mapToResponse(car);
     }
 
+    @Transactional
+    public CarResponse updateCarStatus(Long id, UpdateCarStatusRequest request) {
 
+        Car car = findCarByIdOrThrow(id);
+
+        car.changeStatus(request.status());
+
+        return mapToResponse(car);
+
+
+    }
+
+    private Car findCarByIdOrThrow(Long id) {
+        return carRepository.findById(id)
+                .orElseThrow(() ->
+                        new CarNotFoundException(
+                                "Car with id " + id + " was not found."
+                        )
+                );
+    }
 }
+

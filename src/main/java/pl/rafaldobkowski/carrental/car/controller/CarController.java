@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import pl.rafaldobkowski.carrental.car.dto.CarResponse;
 import pl.rafaldobkowski.carrental.car.dto.CreateCarRequest;
 import pl.rafaldobkowski.carrental.car.dto.UpdateCarRequest;
+import pl.rafaldobkowski.carrental.car.dto.UpdateCarStatusRequest;
 import pl.rafaldobkowski.carrental.car.service.CarService;
 
 import java.util.List;
@@ -49,6 +50,13 @@ public class CarController {
         CarResponse updatedCar = carService.updateCar(id, request);
 
         return ResponseEntity.ok(updatedCar);
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<CarResponse> updateCarStatus(@PathVariable Long id, @Valid @RequestBody UpdateCarStatusRequest request){
+        CarResponse updatedCarStatus = carService.updateCarStatus(id, request);
+
+        return ResponseEntity.ok(updatedCarStatus);
     }
 
 

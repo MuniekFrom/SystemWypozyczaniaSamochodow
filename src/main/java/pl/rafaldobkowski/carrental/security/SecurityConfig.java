@@ -22,6 +22,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.POST, "/api/cars").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/cars/**").permitAll()
+                        .requestMatchers(HttpMethod.PATCH, "/api/cars/**").permitAll()
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/cars",
