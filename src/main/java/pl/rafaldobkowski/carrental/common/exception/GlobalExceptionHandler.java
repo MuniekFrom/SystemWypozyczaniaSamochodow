@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import pl.rafaldobkowski.carrental.car.exception.CarAlreadyExistsException;
 import pl.rafaldobkowski.carrental.car.exception.CarNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import pl.rafaldobkowski.carrental.user.exception.UserAlreadyExistsException;
+
 import java.util.stream.Collectors;
 import java.time.Instant;
 
@@ -77,6 +79,26 @@ public class GlobalExceptionHandler {
                 status.value(),
                 status.getReasonPhrase(),
                 message,
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(status)
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ResponseEntity<ApiErrorResponse> handleUserAlreadyExists(
+            UserAlreadyExistsException exception,
+            HttpServletRequest request) {
+
+        HttpStatus status = HttpStatus.CONFLICT;
+
+        ApiErrorResponse errorResponse = new ApiErrorResponse(
+                Instant.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                exception.getMessage(),
                 request.getRequestURI()
         );
 
