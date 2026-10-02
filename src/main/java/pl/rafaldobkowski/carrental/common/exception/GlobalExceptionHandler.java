@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import pl.rafaldobkowski.carrental.auth.exception.InvalidCredentialsException;
 import pl.rafaldobkowski.carrental.car.exception.CarAlreadyExistsException;
 import pl.rafaldobkowski.carrental.car.exception.CarNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -106,4 +107,26 @@ public class GlobalExceptionHandler {
                 .status(status)
                 .body(errorResponse);
     }
+
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidCredentials(
+            InvalidCredentialsException exception,
+            HttpServletRequest request) {
+
+        HttpStatus status = HttpStatus.UNAUTHORIZED;
+
+        ApiErrorResponse errorResponse = new ApiErrorResponse(
+                Instant.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(status)
+                .body(errorResponse);
+    }
+
 }
