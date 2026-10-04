@@ -8,6 +8,10 @@ import pl.rafaldobkowski.carrental.auth.dto.LoginRequest;
 import pl.rafaldobkowski.carrental.auth.exception.InvalidCredentialsException;
 import pl.rafaldobkowski.carrental.user.model.User;
 
+import pl.rafaldobkowski.carrental.auth.dto.LoginResponse;
+import pl.rafaldobkowski.carrental.security.JwtService;
+
+
 @Service
 public class AuthService {
 
@@ -15,9 +19,12 @@ public class AuthService {
 
     private final PasswordEncoder passwordEncoder;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder){
+    private final JwtService jwtService;
+
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService){
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     @Transactional(readOnly = true)
@@ -39,6 +46,20 @@ public class AuthService {
         }
 
         return user;
+    }
+
+    @Transactional(readOnly = true)
+    public LoginResponse login(LoginRequest request) {
+
+        User user = authenticate(request);
+
+        String accessToken = jwtService.generateToken(user);
+
+        return new LoginResponse(
+                accessToken,
+                "Bearer",
+                jwtService.getExpirationSeconds()
+        );
     }
 
 }
