@@ -22,8 +22,13 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+
 
 @WebMvcTest(CarController.class)
 @Import(SecurityConfig.class)
@@ -34,6 +39,9 @@ class CarControllerTest {
 
     @MockitoBean
     private CarService carService;
+
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
 
     private CarResponse createTestCarResponse() {
         return new CarResponse(
@@ -111,6 +119,9 @@ class CarControllerTest {
 
         mockMvc.perform(
                         patch("/api/cars/{id}/status", carId)
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_ADMIN")
+                                ))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("""
                                     {
@@ -136,7 +147,10 @@ class CarControllerTest {
         when(carService.getCarById(carId))
                 .thenReturn(carResponse);
 
-        mockMvc.perform(get("/api/cars/{id}", carId))
+        mockMvc.perform(get("/api/cars/{id}", carId)
+                        .with(jwt().authorities(
+                                new SimpleGrantedAuthority("ROLE_ADMIN")
+                        )))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.brand").value("Toyota"))
@@ -147,7 +161,7 @@ class CarControllerTest {
     }
 
     @Test
-    void shouldCreateCarAndRturnCreatedStatus() throws Exception{
+    void shouldCreateCarAndReturnCreatedStatus() throws Exception{
         CarResponse carResponse = createTestCarResponse();
 
         when(carService.createCar(any(CreateCarRequest.class)))
@@ -155,6 +169,9 @@ class CarControllerTest {
 
         mockMvc.perform(
                         post("/api/cars")
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_ADMIN")
+                                ))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(validCreateCarJson())
                 )
@@ -189,6 +206,9 @@ class CarControllerTest {
 
         mockMvc.perform(
                         post("/api/cars")
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_ADMIN")
+                                ))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(validCreateCarJson())
                 )
@@ -200,5 +220,32 @@ class CarControllerTest {
 
         verify(carService)
                 .createCar(any(CreateCarRequest.class));
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenCreatingCarWithoutToken() throws Exception {
+        mockMvc.perform(
+                        post("/api/cars")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(validCreateCarJson())
+                )
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(carService);
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenClientCreatesCar() throws Exception {
+        mockMvc.perform(
+                        post("/api/cars")
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_CLIENT")
+                                ))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(validCreateCarJson())
+                )
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(carService);
     }
 }
