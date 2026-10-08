@@ -12,6 +12,7 @@ import pl.rafaldobkowski.carrental.auth.dto.LoginResponse;
 import pl.rafaldobkowski.carrental.auth.exception.InvalidCredentialsException;
 import pl.rafaldobkowski.carrental.auth.service.AuthService;
 import pl.rafaldobkowski.carrental.security.SecurityConfig;
+import pl.rafaldobkowski.carrental.auth.exception.AccountBlockedException;
 
 import static org.mockito.ArgumentMatchers.any;
 
@@ -127,6 +128,33 @@ public class AuthControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401))
                 .andExpect(jsonPath("$.error").value("Unauthorized"))
+                .andExpect(jsonPath("$.message").value(message))
+                .andExpect(jsonPath("$.path").value("/api/auth/login"));
+
+        verify(authService)
+                .login(any(LoginRequest.class));
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenAccountIsBlocked() throws Exception {
+        String message = "User account is blocked";
+
+        when(authService.login(any(LoginRequest.class)))
+                .thenThrow(new AccountBlockedException(message));
+
+        mockMvc.perform(
+                        post("/api/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                {
+                                  "email": "anna.nowak@example.com",
+                                  "password": "Haslo123!"
+                                }
+                                """)
+                )
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.error").value("Forbidden"))
                 .andExpect(jsonPath("$.message").value(message))
                 .andExpect(jsonPath("$.path").value("/api/auth/login"));
 

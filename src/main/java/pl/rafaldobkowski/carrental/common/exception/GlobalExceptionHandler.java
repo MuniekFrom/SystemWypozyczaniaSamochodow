@@ -10,6 +10,7 @@ import pl.rafaldobkowski.carrental.car.exception.CarAlreadyExistsException;
 import pl.rafaldobkowski.carrental.car.exception.CarNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import pl.rafaldobkowski.carrental.user.exception.UserAlreadyExistsException;
+import pl.rafaldobkowski.carrental.auth.exception.AccountBlockedException;
 
 import java.util.stream.Collectors;
 import java.time.Instant;
@@ -115,6 +116,26 @@ public class GlobalExceptionHandler {
             HttpServletRequest request) {
 
         HttpStatus status = HttpStatus.UNAUTHORIZED;
+
+        ApiErrorResponse errorResponse = new ApiErrorResponse(
+                Instant.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(status)
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler(AccountBlockedException.class)
+    public ResponseEntity<ApiErrorResponse> handleAccountBlocked(
+            AccountBlockedException exception,
+            HttpServletRequest request) {
+
+        HttpStatus status = HttpStatus.FORBIDDEN;
 
         ApiErrorResponse errorResponse = new ApiErrorResponse(
                 Instant.now(),

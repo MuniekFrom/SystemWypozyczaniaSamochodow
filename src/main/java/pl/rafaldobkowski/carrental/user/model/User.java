@@ -88,4 +88,16 @@ public class User {
     public Instant getCreatedAt() {
         return createdAt;
     }
+
+    public boolean isBlocked() {
+        return status == UserStatus.BLOCKED;
+    }
+
+    public void block() {
+        status = UserStatus.BLOCKED;
+    }
+
+    public void activate() {
+        status = UserStatus.ACTIVE;
+    }
 }

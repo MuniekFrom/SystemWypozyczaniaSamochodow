@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import pl.rafaldobkowski.carrental.auth.exception.AccountBlockedException;
 
 import pl.rafaldobkowski.carrental.security.JwtService;
 
@@ -203,6 +204,52 @@ class AuthServiceTest {
 
         verify(jwtService)
                 .getExpirationSeconds();
+    }
+
+    @Test
+    void shouldNotGenerateTokenWhenAccountIsBlocked() {
+        LoginRequest request = new LoginRequest(
+                "anna.nowak@example.com",
+                "Haslo123!"
+        );
+
+        User user = new User(
+                "Anna",
+                "Nowak",
+                "anna.nowak@example.com",
+                "stored-password-hash",
+                "+48123456789"
+        );
+
+        user.block();
+
+        when(userRepository.findByEmail(request.email()))
+                .thenReturn(Optional.of(user));
+
+        when(passwordEncoder.matches(
+                request.password(),
+                user.getPasswordHash()
+        )).thenReturn(true);
+
+        AccountBlockedException exception = assertThrows(
+                AccountBlockedException.class,
+                () -> authService.login(request)
+        );
+
+        assertEquals(
+                "User account is blocked",
+                exception.getMessage()
+        );
+
+        verify(userRepository)
+                .findByEmail(request.email());
+
+        verify(passwordEncoder).matches(
+                request.password(),
+                user.getPasswordHash()
+        );
+
+        verifyNoInteractions(jwtService);
     }
 
 

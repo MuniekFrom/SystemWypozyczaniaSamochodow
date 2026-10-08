@@ -11,6 +11,8 @@ import pl.rafaldobkowski.carrental.user.model.User;
 import pl.rafaldobkowski.carrental.auth.dto.LoginResponse;
 import pl.rafaldobkowski.carrental.security.JwtService;
 
+import pl.rafaldobkowski.carrental.auth.exception.AccountBlockedException;
+
 
 @Service
 public class AuthService {
@@ -42,6 +44,12 @@ public class AuthService {
         if (!passwordMatches) {
             throw new InvalidCredentialsException(
                     "Invalid email or password"
+            );
+        }
+
+        if (user.isBlocked()) {
+            throw new AccountBlockedException(
+                    "User account is blocked"
             );
         }
 
