@@ -10,14 +10,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import pl.rafaldobkowski.carrental.user.dto.CreateUserRequest;
 import pl.rafaldobkowski.carrental.user.dto.UserResponse;
 import pl.rafaldobkowski.carrental.user.exception.UserAlreadyExistsException;
+import pl.rafaldobkowski.carrental.user.exception.UserNotFoundException;
 import pl.rafaldobkowski.carrental.user.model.User;
 import pl.rafaldobkowski.carrental.user.model.UserRole;
 import pl.rafaldobkowski.carrental.user.model.UserStatus;
 import pl.rafaldobkowski.carrental.user.repository.UserRepository;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -65,7 +66,7 @@ class UserServiceTest {
     }
 
     @Test
-    void shouldCreateUserWhenEmailIsUnique(){
+    void shouldCreateUserWhenEmailIsUnique() {
         CreateUserRequest request = new CreateUserRequest(
                 "Anna",
                 "Nowak",
@@ -108,5 +109,82 @@ class UserServiceTest {
         User savedUser = userCaptor.getValue();
 
         assertEquals(passwordHash, savedUser.getPasswordHash());
+    }
+
+    @Test
+    void shouldBlockUserWhenUserExists() {
+        Long userId = 1L;
+
+        User user = new User(
+                "Anna",
+                "Nowak",
+                "anna.nowak@example.com",
+                "stored-password-hash",
+                "+48123456789"
+        );
+
+        when(userRepository.findById(userId))
+                .thenReturn(Optional.of(user));
+
+        UserResponse response = userService.blockUser(userId);
+
+        assertEquals(UserStatus.BLOCKED, user.getStatus());
+        assertEquals(UserStatus.BLOCKED, response.status());
+
+        verify(userRepository).findById(userId);
+
+        verify(userRepository, never())
+                .save(any(User.class));
+    }
+
+    @Test
+    void shouldActivateUserWhenUserExists() {
+        Long userId = 1L;
+
+        User user = new User(
+                "Anna",
+                "Nowak",
+                "anna.nowak@example.com",
+                "stored-password-hash",
+                "+48123456789"
+        );
+
+        user.block();
+
+        when(userRepository.findById(userId))
+                .thenReturn(Optional.of(user));
+
+        UserResponse response = userService.activateUser(userId);
+
+        assertEquals(UserStatus.ACTIVE, user.getStatus());
+        assertEquals(UserStatus.ACTIVE, response.status());
+
+        verify(userRepository).findById(userId);
+
+        verify(userRepository, never())
+                .save(any(User.class));
+    }
+
+    @Test
+    void shouldThrowUserNotFoundExceptionWhenBlockingMissingUser() {
+        Long userId = 99L;
+
+        when(userRepository.findById(userId))
+                .thenReturn(Optional.empty());
+
+        UserNotFoundException exception = assertThrows(
+                UserNotFoundException.class,
+                () -> userService.blockUser(userId)
+        );
+
+        assertEquals(
+                "User with id 99 was not found",
+                exception.getMessage()
+        );
+
+        verify(userRepository).findById(userId);
+
+        verify(userRepository, never())
+                .save(any(User.class));
     }
 }

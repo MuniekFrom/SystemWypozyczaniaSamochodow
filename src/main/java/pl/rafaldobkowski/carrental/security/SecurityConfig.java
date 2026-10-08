@@ -29,18 +29,12 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
+                        .requestMatchers(HttpMethod.PATCH, "/api/users/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/cars").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/cars/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/cars/**").hasRole("ADMIN")
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/cars",
-                                "/api/cars/**"
-                        ).permitAll()
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/api/auth/login"
-                        ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/cars", "/api/cars/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 )

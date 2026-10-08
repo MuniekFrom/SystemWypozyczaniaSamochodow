@@ -11,6 +11,7 @@ import pl.rafaldobkowski.carrental.car.exception.CarNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import pl.rafaldobkowski.carrental.user.exception.UserAlreadyExistsException;
 import pl.rafaldobkowski.carrental.auth.exception.AccountBlockedException;
+import pl.rafaldobkowski.carrental.user.exception.UserNotFoundException;
 
 import java.util.stream.Collectors;
 import java.time.Instant;
@@ -136,6 +137,26 @@ public class GlobalExceptionHandler {
             HttpServletRequest request) {
 
         HttpStatus status = HttpStatus.FORBIDDEN;
+
+        ApiErrorResponse errorResponse = new ApiErrorResponse(
+                Instant.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(status)
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleUserNotFound(
+            UserNotFoundException exception,
+            HttpServletRequest request) {
+
+        HttpStatus status = HttpStatus.NOT_FOUND;
 
         ApiErrorResponse errorResponse = new ApiErrorResponse(
                 Instant.now(),

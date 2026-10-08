@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RestController;
 import pl.rafaldobkowski.carrental.user.dto.CreateUserRequest;
 import pl.rafaldobkowski.carrental.user.dto.UserResponse;
 import pl.rafaldobkowski.carrental.user.service.UserService;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
 @RequestMapping("/api/users")
@@ -29,5 +31,23 @@ public class UserController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(createdUser);
+    }
+
+    @PatchMapping("/{id}/block")
+    public ResponseEntity<UserResponse> blockUser(
+            @PathVariable Long id) {
+
+        UserResponse blockedUser = userService.blockUser(id);
+
+        return ResponseEntity.ok(blockedUser);
+    }
+
+    @PatchMapping("/{id}/activate")
+    public ResponseEntity<UserResponse> activateUser(
+            @PathVariable Long id) {
+
+        UserResponse activatedUser = userService.activateUser(id);
+
+        return ResponseEntity.ok(activatedUser);
     }
 }
