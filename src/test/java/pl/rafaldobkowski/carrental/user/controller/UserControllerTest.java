@@ -29,6 +29,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.util.List;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+
 @WebMvcTest(UserController.class)
 @Import(SecurityConfig.class)
 class UserControllerTest {
@@ -293,6 +297,90 @@ class UserControllerTest {
                         .value("/api/users/99/block"));
 
         verify(userService).blockUser(userId);
+    }
+
+
+    @Test
+    void shouldReturnAllUsersWhenAdminIsAuthenticated() throws Exception {
+        UserResponse activeUser = new UserResponse(
+                1L,
+                "Anna",
+                "Nowak",
+                "anna.nowak@example.com",
+                "+48111111111",
+                UserRole.CLIENT,
+                UserStatus.ACTIVE,
+                Instant.parse("2026-10-01T10:00:00Z")
+        );
+
+        UserResponse blockedUser = new UserResponse(
+                2L,
+                "Jan",
+                "Kowalski",
+                "jan.kowalski@example.com",
+                "+48222222222",
+                UserRole.CLIENT,
+                UserStatus.BLOCKED,
+                Instant.parse("2026-10-02T10:00:00Z")
+        );
+
+        when(userService.getAllUsers())
+                .thenReturn(List.of(activeUser, blockedUser));
+
+        mockMvc.perform(
+                        get("/api/users")
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_ADMIN")
+                                ))
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_JSON
+                ))
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].email")
+                        .value("anna.nowak@example.com"))
+                .andExpect(jsonPath("$[0].status")
+                        .value("ACTIVE"))
+                .andExpect(jsonPath("$[1].id").value(2))
+                .andExpect(jsonPath("$[1].email")
+                        .value("jan.kowalski@example.com"))
+                .andExpect(jsonPath("$[1].status")
+                        .value("BLOCKED"))
+                .andExpect(jsonPath("$[0].passwordHash")
+                        .doesNotExist())
+                .andExpect(jsonPath("$[1].passwordHash")
+                        .doesNotExist());
+
+        verify(userService).getAllUsers();
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenClientRequestsAllUsers()
+            throws Exception {
+
+        mockMvc.perform(
+                        get("/api/users")
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_CLIENT")
+                                ))
+                )
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenRequestingAllUsersWithoutToken()
+            throws Exception {
+
+        mockMvc.perform(
+                        get("/api/users")
+                )
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(userService);
     }
 
 }

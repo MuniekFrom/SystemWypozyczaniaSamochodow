@@ -12,6 +12,9 @@ import pl.rafaldobkowski.carrental.user.dto.UserResponse;
 import pl.rafaldobkowski.carrental.user.service.UserService;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.GetMapping;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -49,5 +52,12 @@ public class UserController {
         UserResponse activatedUser = userService.activateUser(id);
 
         return ResponseEntity.ok(activatedUser);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+        List<UserResponse> users = userService.getAllUsers();
+
+        return ResponseEntity.ok(users);
     }
 }

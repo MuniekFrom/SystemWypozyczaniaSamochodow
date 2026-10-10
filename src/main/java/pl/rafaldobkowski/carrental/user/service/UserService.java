@@ -2,14 +2,15 @@ package pl.rafaldobkowski.carrental.user.service;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import pl.rafaldobkowski.carrental.user.repository.UserRepository;
-import pl.rafaldobkowski.carrental.user.exception.UserNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rafaldobkowski.carrental.user.dto.CreateUserRequest;
 import pl.rafaldobkowski.carrental.user.dto.UserResponse;
 import pl.rafaldobkowski.carrental.user.exception.UserAlreadyExistsException;
+import pl.rafaldobkowski.carrental.user.exception.UserNotFoundException;
 import pl.rafaldobkowski.carrental.user.model.User;
+import pl.rafaldobkowski.carrental.user.repository.UserRepository;
 
+import java.util.List;
 
 
 @Service
@@ -83,5 +84,13 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException(
                         "User with id " + id + " was not found"
                 ));
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserResponse> getAllUsers() {
+        return userRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 }

@@ -21,6 +21,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.util.List;
+
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
@@ -186,5 +188,46 @@ class UserServiceTest {
 
         verify(userRepository, never())
                 .save(any(User.class));
+    }
+
+    @Test
+    void shouldReturnAllUsers() {
+        User firstUser = new User(
+                "Anna",
+                "Nowak",
+                "anna.nowak@example.com",
+                "first-password-hash",
+                "+48111111111"
+        );
+
+        User secondUser = new User(
+                "Jan",
+                "Kowalski",
+                "jan.kowalski@example.com",
+                "second-password-hash",
+                "+48222222222"
+        );
+
+        secondUser.block();
+
+        when(userRepository.findAll())
+                .thenReturn(List.of(firstUser, secondUser));
+
+        List<UserResponse> responses = userService.getAllUsers();
+
+        assertEquals(2, responses.size());
+
+        assertEquals("anna.nowak@example.com",
+                responses.get(0).email());
+        assertEquals(UserStatus.ACTIVE,
+                responses.get(0).status());
+
+        assertEquals("jan.kowalski@example.com",
+                responses.get(1).email());
+        assertEquals(UserStatus.BLOCKED,
+                responses.get(1).status());
+
+        verify(userRepository).findAll();
+        verifyNoInteractions(passwordEncoder);
     }
 }
