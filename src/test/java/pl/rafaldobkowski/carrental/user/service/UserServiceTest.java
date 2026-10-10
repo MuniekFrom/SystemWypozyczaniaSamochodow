@@ -230,4 +230,35 @@ class UserServiceTest {
         verify(userRepository).findAll();
         verifyNoInteractions(passwordEncoder);
     }
+
+    @Test
+    void shouldReturnUserByIdWhenUserExists() {
+        Long userId = 1L;
+
+        User user = new User(
+                "Anna",
+                "Nowak",
+                "anna.nowak@example.com",
+                "stored-password-hash",
+                "+48123456789"
+        );
+
+        when(userRepository.findById(userId))
+                .thenReturn(Optional.of(user));
+
+        UserResponse response = userService.getUserById(userId);
+
+        assertEquals("Anna", response.firstName());
+        assertEquals("Nowak", response.lastName());
+        assertEquals(
+                "anna.nowak@example.com",
+                response.email()
+        );
+        assertEquals(UserRole.CLIENT, response.role());
+        assertEquals(UserStatus.ACTIVE, response.status());
+
+        verify(userRepository).findById(userId);
+        verifyNoInteractions(passwordEncoder);
+    }
+
 }

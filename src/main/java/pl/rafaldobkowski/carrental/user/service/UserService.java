@@ -93,4 +93,11 @@ public class UserService {
                 .map(this::mapToResponse)
                 .toList();
     }
+
+    @Transactional(readOnly = true)
+    public UserResponse getUserById(Long id) {
+        User user = findUserByIdOrThrow(id);
+
+        return mapToResponse(user);
+    }
 }

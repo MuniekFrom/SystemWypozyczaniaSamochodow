@@ -383,4 +383,83 @@ class UserControllerTest {
         verifyNoInteractions(userService);
     }
 
+    @Test
+    void shouldReturnCurrentUserProfile() throws Exception {
+        Long userId = 1L;
+
+        UserResponse response = new UserResponse(
+                userId,
+                "Anna",
+                "Nowak",
+                "anna.nowak@example.com",
+                "+48123456789",
+                UserRole.CLIENT,
+                UserStatus.ACTIVE,
+                Instant.parse("2026-10-01T10:00:00Z")
+        );
+
+        when(userService.getUserById(userId))
+                .thenReturn(response);
+
+        mockMvc.perform(
+                        get("/api/users/me")
+                                .with(jwt().jwt(jwt ->
+                                        jwt.subject("1")
+                                ))
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_JSON
+                ))
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.firstName").value("Anna"))
+                .andExpect(jsonPath("$.lastName").value("Nowak"))
+                .andExpect(jsonPath("$.email")
+                        .value("anna.nowak@example.com"))
+                .andExpect(jsonPath("$.role").value("CLIENT"))
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.password").doesNotExist())
+                .andExpect(jsonPath("$.passwordHash").doesNotExist());
+
+        verify(userService).getUserById(userId);
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenRequestingProfileWithoutToken()
+            throws Exception {
+
+        mockMvc.perform(
+                        get("/api/users/me")
+                )
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenCurrentUserDoesNotExist()
+            throws Exception {
+
+        Long userId = 99L;
+        String message = "User with id 99 was not found";
+
+        when(userService.getUserById(userId))
+                .thenThrow(new UserNotFoundException(message));
+
+        mockMvc.perform(
+                        get("/api/users/me")
+                                .with(jwt().jwt(jwt ->
+                                        jwt.subject("99")
+                                ))
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message").value(message))
+                .andExpect(jsonPath("$.path")
+                        .value("/api/users/me"));
+
+        verify(userService).getUserById(userId);
+    }
+
 }
