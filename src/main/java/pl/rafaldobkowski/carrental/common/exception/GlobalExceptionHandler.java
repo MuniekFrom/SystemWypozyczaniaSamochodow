@@ -12,6 +12,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import pl.rafaldobkowski.carrental.user.exception.UserAlreadyExistsException;
 import pl.rafaldobkowski.carrental.auth.exception.AccountBlockedException;
 import pl.rafaldobkowski.carrental.user.exception.UserNotFoundException;
+import pl.rafaldobkowski.carrental.reservation.exception.CarNotAvailableException;
+import pl.rafaldobkowski.carrental.reservation.exception.InvalidReservationPeriodException;
 
 import java.util.stream.Collectors;
 import java.time.Instant;
@@ -157,6 +159,46 @@ public class GlobalExceptionHandler {
             HttpServletRequest request) {
 
         HttpStatus status = HttpStatus.NOT_FOUND;
+
+        ApiErrorResponse errorResponse = new ApiErrorResponse(
+                Instant.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(status)
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler(InvalidReservationPeriodException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidReservationPeriod(
+            InvalidReservationPeriodException exception,
+            HttpServletRequest request) {
+
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+
+        ApiErrorResponse errorResponse = new ApiErrorResponse(
+                Instant.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(status)
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler(CarNotAvailableException.class)
+    public ResponseEntity<ApiErrorResponse> handleCarNotAvailable(
+            CarNotAvailableException exception,
+            HttpServletRequest request) {
+
+        HttpStatus status = HttpStatus.CONFLICT;
 
         ApiErrorResponse errorResponse = new ApiErrorResponse(
                 Instant.now(),
