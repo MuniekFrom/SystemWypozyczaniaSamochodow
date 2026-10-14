@@ -9,6 +9,11 @@ import pl.rafaldobkowski.carrental.reservation.model.ReservationStatus;
 import java.time.LocalDate;
 import java.util.Collection;
 
+import org.springframework.data.jpa.repository.EntityGraph;
+
+import java.util.List;
+import java.util.Optional;
+
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
 
     @Query("""
@@ -25,5 +30,15 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             @Param("endDate") LocalDate endDate,
             @Param("statuses")
             Collection<ReservationStatus> statuses
+    );
+
+    @EntityGraph(attributePaths = {"user", "car"})
+    List<Reservation> findAllByUserIdOrderByCreatedAtDesc(
+            Long userId
+    );
+
+    Optional<Reservation> findByIdAndUserId(
+            Long reservationId,
+            Long userId
     );
 }

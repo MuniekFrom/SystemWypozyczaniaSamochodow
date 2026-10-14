@@ -20,12 +20,14 @@ import pl.rafaldobkowski.carrental.security.SecurityConfig;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -294,6 +296,61 @@ class ReservationControllerTest {
                 anyLong(),
                 any(CreateReservationRequest.class)
         );
+    }
+
+    @Test
+    void shouldReturnCurrentUserReservations() throws Exception {
+        Long userId = 1L;
+
+        ReservationResponse reservation = new ReservationResponse(
+                10L,
+                userId,
+                "anna.nowak@example.com",
+                2L,
+                "Toyota",
+                "Corolla",
+                LocalDate.of(2026, 11, 10),
+                LocalDate.of(2026, 11, 12),
+                new BigDecimal("399.98"),
+                ReservationStatus.PENDING,
+                Instant.parse("2026-10-14T10:00:00Z")
+        );
+
+        when(reservationService.getUserReservations(userId))
+                .thenReturn(List.of(reservation));
+
+        mockMvc.perform(
+                        get("/api/reservations/me")
+                                .with(jwt().jwt(jwt -> jwt.subject("1")))
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_JSON
+                ))
+                .andExpect(jsonPath("$[0].id").value(10))
+                .andExpect(jsonPath("$[0].userId").value(1))
+                .andExpect(jsonPath("$[0].carId").value(2))
+                .andExpect(jsonPath("$[0].carBrand").value("Toyota"))
+                .andExpect(jsonPath("$[0].carModel").value("Corolla"))
+                .andExpect(jsonPath("$[0].startDate").value("2026-11-10"))
+                .andExpect(jsonPath("$[0].endDate").value("2026-11-12"))
+                .andExpect(jsonPath("$[0].totalPrice").value(399.98))
+                .andExpect(jsonPath("$[0].status").value("PENDING"));
+
+        verify(reservationService)
+                .getUserReservations(userId);
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenGettingReservationsWithoutToken()
+            throws Exception {
+
+        mockMvc.perform(
+                        get("/api/reservations/me")
+                )
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(reservationService);
     }
 
 }

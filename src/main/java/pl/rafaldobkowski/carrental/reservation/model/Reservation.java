@@ -7,6 +7,7 @@ import pl.rafaldobkowski.carrental.user.model.User;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import pl.rafaldobkowski.carrental.reservation.exception.InvalidReservationStatusException;
 
 @Entity
 @Table(name = "reservations")
@@ -90,4 +91,16 @@ public class Reservation {
     public Instant getCreatedAt() {
         return createdAt;
     }
+
+    public void cancel() {
+        if (status != ReservationStatus.PENDING
+                && status != ReservationStatus.CONFIRMED) {
+            throw new InvalidReservationStatusException(
+                    "Reservation cannot be cancelled in its current status"
+            );
+        }
+
+        status = ReservationStatus.CANCELLED;
+    }
+
 }

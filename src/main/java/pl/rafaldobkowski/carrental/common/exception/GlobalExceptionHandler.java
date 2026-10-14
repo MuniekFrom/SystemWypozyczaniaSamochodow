@@ -3,20 +3,22 @@ package pl.rafaldobkowski.carrental.common.exception;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import pl.rafaldobkowski.carrental.auth.exception.AccountBlockedException;
 import pl.rafaldobkowski.carrental.auth.exception.InvalidCredentialsException;
 import pl.rafaldobkowski.carrental.car.exception.CarAlreadyExistsException;
 import pl.rafaldobkowski.carrental.car.exception.CarNotFoundException;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import pl.rafaldobkowski.carrental.user.exception.UserAlreadyExistsException;
-import pl.rafaldobkowski.carrental.auth.exception.AccountBlockedException;
-import pl.rafaldobkowski.carrental.user.exception.UserNotFoundException;
 import pl.rafaldobkowski.carrental.reservation.exception.CarNotAvailableException;
 import pl.rafaldobkowski.carrental.reservation.exception.InvalidReservationPeriodException;
+import pl.rafaldobkowski.carrental.reservation.exception.InvalidReservationStatusException;
+import pl.rafaldobkowski.carrental.reservation.exception.ReservationNotFoundException;
+import pl.rafaldobkowski.carrental.user.exception.UserAlreadyExistsException;
+import pl.rafaldobkowski.carrental.user.exception.UserNotFoundException;
 
-import java.util.stream.Collectors;
 import java.time.Instant;
+import java.util.stream.Collectors;
 
 
 @RestControllerAdvice
@@ -198,6 +200,47 @@ public class GlobalExceptionHandler {
             CarNotAvailableException exception,
             HttpServletRequest request) {
 
+        HttpStatus status = HttpStatus.CONFLICT;
+
+        ApiErrorResponse errorResponse = new ApiErrorResponse(
+                Instant.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(status)
+                .body(errorResponse);
+    }
+
+
+    @ExceptionHandler(ReservationNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleReservationNotFound(
+            ReservationNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        HttpStatus status = HttpStatus.NOT_FOUND;
+
+        ApiErrorResponse errorResponse = new ApiErrorResponse(
+                Instant.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                exception.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(status)
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler(InvalidReservationStatusException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidReservationStatus(
+            InvalidReservationStatusException exception,
+            HttpServletRequest request
+    ) {
         HttpStatus status = HttpStatus.CONFLICT;
 
         ApiErrorResponse errorResponse = new ApiErrorResponse(

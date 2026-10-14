@@ -17,6 +17,9 @@ import pl.rafaldobkowski.carrental.reservation.repository.ReservationRepository;
 import pl.rafaldobkowski.carrental.user.exception.UserNotFoundException;
 import pl.rafaldobkowski.carrental.user.model.User;
 import pl.rafaldobkowski.carrental.user.repository.UserRepository;
+import pl.rafaldobkowski.carrental.reservation.exception.ReservationNotFoundException;
+
+import java.util.List;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -156,6 +159,33 @@ public class ReservationService {
                 reservation.getStatus(),
                 reservation.getCreatedAt()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReservationResponse> getUserReservations(Long userId) {
+        findUserByIdOrThrow(userId);
+
+        return reservationRepository
+                .findAllByUserIdOrderByCreatedAtDesc(userId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Transactional
+    public ReservationResponse cancelReservation(
+            Long userId,
+            Long reservationId
+    ) {
+        Reservation reservation = reservationRepository
+                .findByIdAndUserId(reservationId, userId)
+                .orElseThrow(() -> new ReservationNotFoundException(
+                        "Reservation not found"
+                ));
+
+        reservation.cancel();
+
+        return mapToResponse(reservation);
     }
 
 }

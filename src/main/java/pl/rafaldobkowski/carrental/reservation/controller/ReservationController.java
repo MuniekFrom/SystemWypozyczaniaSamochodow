@@ -5,13 +5,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import pl.rafaldobkowski.carrental.reservation.dto.CreateReservationRequest;
 import pl.rafaldobkowski.carrental.reservation.dto.ReservationResponse;
 import pl.rafaldobkowski.carrental.reservation.service.ReservationService;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/reservations")
@@ -42,4 +41,18 @@ public class ReservationController {
                 .status(HttpStatus.CREATED)
                 .body(createdReservation);
     }
+
+
+    @GetMapping("/me")
+    public ResponseEntity<List<ReservationResponse>> getMyReservations(@AuthenticationPrincipal Jwt jwt){
+
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        List<ReservationResponse> reservations =
+                reservationService.getUserReservations(userId);
+
+        return ResponseEntity.ok(reservations);
+    }
+
+
 }
