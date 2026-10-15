@@ -54,5 +54,21 @@ public class ReservationController {
         return ResponseEntity.ok(reservations);
     }
 
+    @PatchMapping("/{reservationId}/cancel")
+    public ResponseEntity<ReservationResponse> cancelReservation(
+            @PathVariable Long reservationId,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        ReservationResponse response =
+                reservationService.cancelReservation(
+                        userId,
+                        reservationId
+                );
+
+        return ResponseEntity.ok(response);
+    }
+
 
 }

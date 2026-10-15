@@ -13,6 +13,8 @@ import pl.rafaldobkowski.carrental.reservation.dto.CreateReservationRequest;
 import pl.rafaldobkowski.carrental.reservation.dto.ReservationResponse;
 import pl.rafaldobkowski.carrental.reservation.exception.CarNotAvailableException;
 import pl.rafaldobkowski.carrental.reservation.exception.InvalidReservationPeriodException;
+import pl.rafaldobkowski.carrental.reservation.exception.InvalidReservationStatusException;
+import pl.rafaldobkowski.carrental.reservation.exception.ReservationNotFoundException;
 import pl.rafaldobkowski.carrental.reservation.model.ReservationStatus;
 import pl.rafaldobkowski.carrental.reservation.service.ReservationService;
 import pl.rafaldobkowski.carrental.security.SecurityConfig;
@@ -27,8 +29,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ReservationController.class)
@@ -351,6 +352,123 @@ class ReservationControllerTest {
                 .andExpect(status().isUnauthorized());
 
         verifyNoInteractions(reservationService);
+    }
+
+    @Test
+    void shouldCancelCurrentUserReservation() throws Exception {
+        Long userId = 1L;
+        Long reservationId = 10L;
+
+        ReservationResponse response = new ReservationResponse(
+                reservationId,
+                userId,
+                "anna.nowak@example.com",
+                2L,
+                "Toyota",
+                "Corolla",
+                LocalDate.of(2026, 11, 10),
+                LocalDate.of(2026, 11, 12),
+                new BigDecimal("399.98"),
+                ReservationStatus.CANCELLED,
+                Instant.parse("2026-10-14T10:00:00Z")
+        );
+
+        when(reservationService.cancelReservation(
+                userId,
+                reservationId
+        )).thenReturn(response);
+
+        mockMvc.perform(
+                        patch("/api/reservations/{reservationId}/cancel",
+                                reservationId)
+                                .with(jwt().jwt(jwt -> jwt.subject("1")))
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_JSON
+                ))
+                .andExpect(jsonPath("$.id").value(10))
+                .andExpect(jsonPath("$.userId").value(1))
+                .andExpect(jsonPath("$.status").value("CANCELLED"));
+
+        verify(reservationService)
+                .cancelReservation(userId, reservationId);
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenCancellingReservationWithoutToken()
+            throws Exception {
+
+        mockMvc.perform(
+                        patch("/api/reservations/{reservationId}/cancel", 10L)
+                )
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(reservationService);
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenCancellingUnavailableReservation()
+            throws Exception {
+
+        Long userId = 1L;
+        Long reservationId = 99L;
+
+        when(reservationService.cancelReservation(
+                userId,
+                reservationId
+        )).thenThrow(new ReservationNotFoundException(
+                "Reservation not found"
+        ));
+
+        mockMvc.perform(
+                        patch("/api/reservations/{reservationId}/cancel",
+                                reservationId)
+                                .with(jwt().jwt(jwt -> jwt.subject("1")))
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message")
+                        .value("Reservation not found"))
+                .andExpect(jsonPath("$.path")
+                        .value("/api/reservations/99/cancel"));
+
+        verify(reservationService)
+                .cancelReservation(userId, reservationId);
+    }
+
+    @Test
+    void shouldReturnConflictWhenReservationCannotBeCancelled()
+            throws Exception {
+
+        Long userId = 1L;
+        Long reservationId = 10L;
+
+        when(reservationService.cancelReservation(
+                userId,
+                reservationId
+        )).thenThrow(new InvalidReservationStatusException(
+                "Reservation cannot be cancelled in its current status"
+        ));
+
+        mockMvc.perform(
+                        patch("/api/reservations/{reservationId}/cancel",
+                                reservationId)
+                                .with(jwt().jwt(jwt -> jwt.subject("1")))
+                )
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error").value("Conflict"))
+                .andExpect(jsonPath("$.message").value(
+                        "Reservation cannot be cancelled in its current status"
+                ))
+                .andExpect(jsonPath("$.path").value(
+                        "/api/reservations/10/cancel"
+                ));
+
+        verify(reservationService)
+                .cancelReservation(userId, reservationId);
     }
 
 }
