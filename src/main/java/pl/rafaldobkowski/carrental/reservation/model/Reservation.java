@@ -103,4 +103,14 @@ public class Reservation {
         status = ReservationStatus.CANCELLED;
     }
 
+    public void confirm() {
+        if (status != ReservationStatus.PENDING) {
+            throw new InvalidReservationStatusException(
+                    "Only pending reservations can be confirmed"
+            );
+        }
+
+        status = ReservationStatus.CONFIRMED;
+    }
+
 }

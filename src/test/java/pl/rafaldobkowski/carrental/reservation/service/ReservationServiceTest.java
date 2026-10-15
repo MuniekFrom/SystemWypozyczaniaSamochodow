@@ -620,6 +620,141 @@ class ReservationServiceTest {
                 .findByIdAndUserId(reservationId, userId);
     }
 
+
+    @Test
+    void shouldReturnAllReservations() {
+        User user = createTestUser();
+        Car car = createTestCar();
+
+        LocalDate startDate = LocalDate.now().plusDays(1);
+        LocalDate endDate = startDate.plusDays(2);
+
+        Reservation reservation = new Reservation(
+                user,
+                car,
+                startDate,
+                endDate,
+                new BigDecimal("399.98")
+        );
+
+        when(reservationRepository.findAllByOrderByCreatedAtDesc())
+                .thenReturn(List.of(reservation));
+
+        List<ReservationResponse> responses =
+                reservationService.getAllReservations();
+
+        assertEquals(1, responses.size());
+
+        ReservationResponse response = responses.getFirst();
+
+        assertEquals("anna.nowak@example.com", response.userEmail());
+        assertEquals("Toyota", response.carBrand());
+        assertEquals("Corolla", response.carModel());
+        assertEquals(startDate, response.startDate());
+        assertEquals(endDate, response.endDate());
+        assertEquals(new BigDecimal("399.98"), response.totalPrice());
+        assertEquals(ReservationStatus.PENDING, response.status());
+
+        verify(reservationRepository)
+                .findAllByOrderByCreatedAtDesc();
+    }
+
+
+    @Test
+    void shouldConfirmReservation() {
+        Long reservationId = 10L;
+
+        User user = createTestUser();
+        Car car = createTestCar();
+
+        Reservation reservation = new Reservation(
+                user,
+                car,
+                LocalDate.now().plusDays(1),
+                LocalDate.now().plusDays(3),
+                new BigDecimal("399.98")
+        );
+
+        when(reservationRepository.findById(reservationId))
+                .thenReturn(Optional.of(reservation));
+
+        ReservationResponse response =
+                reservationService.confirmReservation(reservationId);
+
+        assertEquals(
+                ReservationStatus.CONFIRMED,
+                reservation.getStatus()
+        );
+
+        assertEquals(
+                ReservationStatus.CONFIRMED,
+                response.status()
+        );
+
+        verify(reservationRepository)
+                .findById(reservationId);
+    }
+
+    @Test
+    void shouldThrowReservationNotFoundWhenConfirmingMissingReservation() {
+        Long reservationId = 99L;
+
+        when(reservationRepository.findById(reservationId))
+                .thenReturn(Optional.empty());
+
+        ReservationNotFoundException exception = assertThrows(
+                ReservationNotFoundException.class,
+                () -> reservationService.confirmReservation(reservationId)
+        );
+
+        assertEquals(
+                "Reservation not found",
+                exception.getMessage()
+        );
+
+        verify(reservationRepository)
+                .findById(reservationId);
+    }
+
+    @Test
+    void shouldRejectConfirmingCancelledReservation() {
+        Long reservationId = 10L;
+
+        User user = createTestUser();
+        Car car = createTestCar();
+
+        Reservation reservation = new Reservation(
+                user,
+                car,
+                LocalDate.now().plusDays(1),
+                LocalDate.now().plusDays(3),
+                new BigDecimal("399.98")
+        );
+
+        reservation.cancel();
+
+        when(reservationRepository.findById(reservationId))
+                .thenReturn(Optional.of(reservation));
+
+        InvalidReservationStatusException exception = assertThrows(
+                InvalidReservationStatusException.class,
+                () -> reservationService.confirmReservation(reservationId)
+        );
+
+        assertEquals(
+                "Only pending reservations can be confirmed",
+                exception.getMessage()
+        );
+
+        assertEquals(
+                ReservationStatus.CANCELLED,
+                reservation.getStatus()
+        );
+
+        verify(reservationRepository)
+                .findById(reservationId);
+    }
+
     private User createTestUser(){
         return new User(
                 "Anna",
@@ -647,7 +782,5 @@ class ReservationServiceTest {
                 "Samochód testowy"
         );
     }
-
-
 
 }

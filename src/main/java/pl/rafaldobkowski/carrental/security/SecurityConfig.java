@@ -38,6 +38,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/reservations").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/reservations").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/reservations/*/confirm").hasRole("ADMIN")
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 )

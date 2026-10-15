@@ -60,4 +60,39 @@ class ReservationTest {
                 new BigDecimal("399.98")
         );
     }
+
+    @Test
+    void shouldConfirmPendingReservation() {
+        Reservation reservation = createTestReservation();
+
+        reservation.confirm();
+
+        assertEquals(
+                ReservationStatus.CONFIRMED,
+                reservation.getStatus()
+        );
+    }
+
+    @Test
+    void shouldRejectConfirmingCancelledReservation() {
+        Reservation reservation = createTestReservation();
+
+        reservation.cancel();
+
+        InvalidReservationStatusException exception = assertThrows(
+                InvalidReservationStatusException.class,
+                reservation::confirm
+        );
+
+        assertEquals(
+                "Only pending reservations can be confirmed",
+                exception.getMessage()
+        );
+
+        assertEquals(
+                ReservationStatus.CANCELLED,
+                reservation.getStatus()
+        );
+    }
+
 }

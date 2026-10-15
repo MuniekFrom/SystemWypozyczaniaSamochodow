@@ -70,5 +70,22 @@ public class ReservationController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping
+    public ResponseEntity<List<ReservationResponse>> getAllReservations() {
+        List<ReservationResponse> reservations =
+                reservationService.getAllReservations();
+
+        return ResponseEntity.ok(reservations);
+    }
+
+    @PatchMapping("/{reservationId}/confirm")
+    public ResponseEntity<ReservationResponse> confirmReservation(
+            @PathVariable Long reservationId
+    ) {
+        ReservationResponse response =
+                reservationService.confirmReservation(reservationId);
+
+        return ResponseEntity.ok(response);
+    }
 
 }

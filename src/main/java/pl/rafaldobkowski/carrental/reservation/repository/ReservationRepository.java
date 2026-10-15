@@ -41,4 +41,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             Long reservationId,
             Long userId
     );
+
+    @EntityGraph(attributePaths = {"user", "car"})
+    List<Reservation> findAllByOrderByCreatedAtDesc();
 }

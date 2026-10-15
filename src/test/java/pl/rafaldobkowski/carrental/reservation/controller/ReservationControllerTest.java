@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -469,6 +470,199 @@ class ReservationControllerTest {
 
         verify(reservationService)
                 .cancelReservation(userId, reservationId);
+    }
+
+    @Test
+    void shouldReturnAllReservationsForAdmin() throws Exception {
+        ReservationResponse reservation = new ReservationResponse(
+                10L,
+                1L,
+                "anna.nowak@example.com",
+                2L,
+                "Toyota",
+                "Corolla",
+                LocalDate.of(2026, 11, 10),
+                LocalDate.of(2026, 11, 12),
+                new BigDecimal("399.98"),
+                ReservationStatus.PENDING,
+                Instant.parse("2026-10-14T10:00:00Z")
+        );
+
+        when(reservationService.getAllReservations())
+                .thenReturn(List.of(reservation));
+
+        mockMvc.perform(
+                        get("/api/reservations")
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_ADMIN")
+                                ))
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_JSON
+                ))
+                .andExpect(jsonPath("$[0].id").value(10))
+                .andExpect(jsonPath("$[0].userEmail")
+                        .value("anna.nowak@example.com"))
+                .andExpect(jsonPath("$[0].carBrand").value("Toyota"))
+                .andExpect(jsonPath("$[0].status").value("PENDING"));
+
+        verify(reservationService)
+                .getAllReservations();
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenClientGetsAllReservations()
+            throws Exception {
+
+        mockMvc.perform(
+                        get("/api/reservations")
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_CLIENT")
+                                ))
+                )
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(reservationService);
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenGettingAllReservationsWithoutToken()
+            throws Exception {
+
+        mockMvc.perform(
+                        get("/api/reservations")
+                )
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(reservationService);
+    }
+
+    @Test
+    void shouldConfirmReservationForAdmin() throws Exception {
+        Long reservationId = 10L;
+
+        ReservationResponse response = new ReservationResponse(
+                reservationId,
+                1L,
+                "anna.nowak@example.com",
+                2L,
+                "Toyota",
+                "Corolla",
+                LocalDate.of(2026, 11, 10),
+                LocalDate.of(2026, 11, 12),
+                new BigDecimal("399.98"),
+                ReservationStatus.CONFIRMED,
+                Instant.parse("2026-10-14T10:00:00Z")
+        );
+
+        when(reservationService.confirmReservation(reservationId))
+                .thenReturn(response);
+
+        mockMvc.perform(
+                        patch("/api/reservations/{reservationId}/confirm",
+                                reservationId)
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_ADMIN")
+                                ))
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_JSON
+                ))
+                .andExpect(jsonPath("$.id").value(10))
+                .andExpect(jsonPath("$.userId").value(1))
+                .andExpect(jsonPath("$.status").value("CONFIRMED"));
+
+        verify(reservationService)
+                .confirmReservation(reservationId);
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenClientConfirmsReservation()
+            throws Exception {
+
+        mockMvc.perform(
+                        patch("/api/reservations/{reservationId}/confirm", 10L)
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_CLIENT")
+                                ))
+                )
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(reservationService);
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenConfirmingReservationWithoutToken()
+            throws Exception {
+
+        mockMvc.perform(
+                        patch("/api/reservations/{reservationId}/confirm", 10L)
+                )
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(reservationService);
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenAdminConfirmsMissingReservation()
+            throws Exception {
+
+        Long reservationId = 99L;
+
+        when(reservationService.confirmReservation(reservationId))
+                .thenThrow(new ReservationNotFoundException(
+                        "Reservation not found"
+                ));
+
+        mockMvc.perform(
+                        patch("/api/reservations/{reservationId}/confirm",
+                                reservationId)
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_ADMIN")
+                                ))
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message")
+                        .value("Reservation not found"))
+                .andExpect(jsonPath("$.path")
+                        .value("/api/reservations/99/confirm"));
+
+        verify(reservationService)
+                .confirmReservation(reservationId);
+    }
+
+    @Test
+    void shouldReturnConflictWhenReservationCannotBeConfirmed()
+            throws Exception {
+
+        Long reservationId = 10L;
+
+        when(reservationService.confirmReservation(reservationId))
+                .thenThrow(new InvalidReservationStatusException(
+                        "Only pending reservations can be confirmed"
+                ));
+
+        mockMvc.perform(
+                        patch("/api/reservations/{reservationId}/confirm",
+                                reservationId)
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_ADMIN")
+                                ))
+                )
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error").value("Conflict"))
+                .andExpect(jsonPath("$.message")
+                        .value("Only pending reservations can be confirmed"))
+                .andExpect(jsonPath("$.path")
+                        .value("/api/reservations/10/confirm"));
+
+        verify(reservationService)
+                .confirmReservation(reservationId);
     }
 
 }

@@ -188,4 +188,26 @@ public class ReservationService {
         return mapToResponse(reservation);
     }
 
+    @Transactional(readOnly = true)
+    public List<ReservationResponse> getAllReservations() {
+        return reservationRepository
+                .findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Transactional
+    public ReservationResponse confirmReservation(Long reservationId) {
+        Reservation reservation = reservationRepository
+                .findById(reservationId)
+                .orElseThrow(() -> new ReservationNotFoundException(
+                        "Reservation not found"
+                ));
+
+        reservation.confirm();
+
+        return mapToResponse(reservation);
+    }
+
 }
