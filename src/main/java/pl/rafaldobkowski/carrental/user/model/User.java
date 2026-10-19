@@ -3,6 +3,7 @@ package pl.rafaldobkowski.carrental.user.model;
 import jakarta.persistence.*;
 
 import java.time.Instant;
+import java.util.Objects;
 
 @Entity
 @Table(name="users")
@@ -99,5 +100,12 @@ public class User {
 
     public void activate() {
         status = UserStatus.ACTIVE;
+    }
+
+    public void changeRole(UserRole newRole) {
+        this.role = Objects.requireNonNull(
+                newRole,
+                "Role cannot be null"
+        );
     }
 }

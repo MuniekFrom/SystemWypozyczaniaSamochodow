@@ -113,4 +113,14 @@ public class Reservation {
         status = ReservationStatus.CONFIRMED;
     }
 
+    public void complete() {
+        if (status != ReservationStatus.CONFIRMED) {
+            throw new InvalidReservationStatusException(
+                    "Only confirmed reservations can be completed"
+            );
+        }
+
+        status = ReservationStatus.COMPLETED;
+    }
+
 }

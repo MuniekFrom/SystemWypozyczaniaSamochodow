@@ -4,6 +4,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rafaldobkowski.carrental.user.dto.CreateUserRequest;
+import pl.rafaldobkowski.carrental.user.dto.UpdateUserRoleRequest;
 import pl.rafaldobkowski.carrental.user.dto.UserResponse;
 import pl.rafaldobkowski.carrental.user.exception.UserAlreadyExistsException;
 import pl.rafaldobkowski.carrental.user.exception.UserNotFoundException;
@@ -97,6 +98,18 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserResponse getUserById(Long id) {
         User user = findUserByIdOrThrow(id);
+
+        return mapToResponse(user);
+    }
+
+    @Transactional
+    public UserResponse changeUserRole(
+            Long userId,
+            UpdateUserRoleRequest request
+    ) {
+        User user = findUserByIdOrThrow(userId);
+
+        user.changeRole(request.role());
 
         return mapToResponse(user);
     }

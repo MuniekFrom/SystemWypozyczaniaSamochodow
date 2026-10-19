@@ -95,4 +95,37 @@ class ReservationTest {
         );
     }
 
+    @Test
+    void shouldCompleteConfirmedReservation() {
+        Reservation reservation = createTestReservation();
+
+        reservation.confirm();
+        reservation.complete();
+
+        assertEquals(
+                ReservationStatus.COMPLETED,
+                reservation.getStatus()
+        );
+    }
+
+    @Test
+    void shouldRejectCompletingPendingReservation() {
+        Reservation reservation = createTestReservation();
+
+        InvalidReservationStatusException exception = assertThrows(
+                InvalidReservationStatusException.class,
+                reservation::complete
+        );
+
+        assertEquals(
+                "Only confirmed reservations can be completed",
+                exception.getMessage()
+        );
+
+        assertEquals(
+                ReservationStatus.PENDING,
+                reservation.getStatus()
+        );
+    }
+
 }

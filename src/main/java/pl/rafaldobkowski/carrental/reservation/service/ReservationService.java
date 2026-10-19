@@ -210,4 +210,17 @@ public class ReservationService {
         return mapToResponse(reservation);
     }
 
+    @Transactional
+    public ReservationResponse completeReservation(Long reservationId) {
+        Reservation reservation = reservationRepository
+                .findById(reservationId)
+                .orElseThrow(() -> new ReservationNotFoundException(
+                        "Reservation not found"
+                ));
+
+        reservation.complete();
+
+        return mapToResponse(reservation);
+    }
+
 }

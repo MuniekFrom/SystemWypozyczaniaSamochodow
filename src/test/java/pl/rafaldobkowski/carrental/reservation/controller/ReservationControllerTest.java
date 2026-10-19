@@ -10,6 +10,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import pl.rafaldobkowski.carrental.reservation.dto.CreateReservationRequest;
 import pl.rafaldobkowski.carrental.reservation.dto.ReservationResponse;
 import pl.rafaldobkowski.carrental.reservation.exception.CarNotAvailableException;
@@ -83,9 +84,7 @@ class ReservationControllerTest {
 
         mockMvc.perform(
                         post("/api/reservations")
-                                .with(jwt().jwt(jwt ->
-                                        jwt.subject("1")
-                                ))
+                                .with(clientJwt(1L))
                                 .contentType(
                                         MediaType.APPLICATION_JSON
                                 )
@@ -183,9 +182,7 @@ class ReservationControllerTest {
 
         mockMvc.perform(
                         post("/api/reservations")
-                                .with(jwt().jwt(jwt ->
-                                        jwt.subject("1")
-                                ))
+                                .with(clientJwt(1L))
                                 .contentType(
                                         MediaType.APPLICATION_JSON
                                 )
@@ -227,9 +224,7 @@ class ReservationControllerTest {
 
         mockMvc.perform(
                         post("/api/reservations")
-                                .with(jwt().jwt(jwt ->
-                                        jwt.subject("1")
-                                ))
+                                .with(clientJwt(1L))
                                 .contentType(
                                         MediaType.APPLICATION_JSON
                                 )
@@ -277,9 +272,7 @@ class ReservationControllerTest {
 
         mockMvc.perform(
                         post("/api/reservations")
-                                .with(jwt().jwt(jwt ->
-                                        jwt.subject("1")
-                                ))
+                                .with(clientJwt(1L))
                                 .contentType(
                                         MediaType.APPLICATION_JSON
                                 )
@@ -323,7 +316,7 @@ class ReservationControllerTest {
 
         mockMvc.perform(
                         get("/api/reservations/me")
-                                .with(jwt().jwt(jwt -> jwt.subject("1")))
+                                .with(clientJwt(1L))
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(
@@ -382,7 +375,7 @@ class ReservationControllerTest {
         mockMvc.perform(
                         patch("/api/reservations/{reservationId}/cancel",
                                 reservationId)
-                                .with(jwt().jwt(jwt -> jwt.subject("1")))
+                                .with(clientJwt(1L))
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(
@@ -425,7 +418,7 @@ class ReservationControllerTest {
         mockMvc.perform(
                         patch("/api/reservations/{reservationId}/cancel",
                                 reservationId)
-                                .with(jwt().jwt(jwt -> jwt.subject("1")))
+                                .with(clientJwt(1L))
                 )
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
@@ -456,7 +449,7 @@ class ReservationControllerTest {
         mockMvc.perform(
                         patch("/api/reservations/{reservationId}/cancel",
                                 reservationId)
-                                .with(jwt().jwt(jwt -> jwt.subject("1")))
+                                .with(clientJwt(1L))
                 )
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
@@ -663,6 +656,141 @@ class ReservationControllerTest {
 
         verify(reservationService)
                 .confirmReservation(reservationId);
+    }
+
+    @Test
+    void shouldCompleteReservationForAdmin() throws Exception {
+        Long reservationId = 10L;
+
+        ReservationResponse response = new ReservationResponse(
+                reservationId,
+                1L,
+                "anna.nowak@example.com",
+                2L,
+                "Toyota",
+                "Corolla",
+                LocalDate.of(2026, 11, 10),
+                LocalDate.of(2026, 11, 12),
+                new BigDecimal("399.98"),
+                ReservationStatus.COMPLETED,
+                Instant.parse("2026-10-14T10:00:00Z")
+        );
+
+        when(reservationService.completeReservation(reservationId))
+                .thenReturn(response);
+
+        mockMvc.perform(
+                        patch("/api/reservations/{reservationId}/complete",
+                                reservationId)
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_ADMIN")
+                                ))
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_JSON
+                ))
+                .andExpect(jsonPath("$.id").value(10))
+                .andExpect(jsonPath("$.userId").value(1))
+                .andExpect(jsonPath("$.status").value("COMPLETED"));
+
+        verify(reservationService)
+                .completeReservation(reservationId);
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenClientCompletesReservation()
+            throws Exception {
+
+        mockMvc.perform(
+                        patch("/api/reservations/{reservationId}/complete", 10L)
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_CLIENT")
+                                ))
+                )
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(reservationService);
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenCompletingReservationWithoutToken()
+            throws Exception {
+
+        mockMvc.perform(
+                        patch("/api/reservations/{reservationId}/complete", 10L)
+                )
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(reservationService);
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenAdminCompletesMissingReservation()
+            throws Exception {
+
+        Long reservationId = 99L;
+
+        when(reservationService.completeReservation(reservationId))
+                .thenThrow(new ReservationNotFoundException(
+                        "Reservation not found"
+                ));
+
+        mockMvc.perform(
+                        patch("/api/reservations/{reservationId}/complete",
+                                reservationId)
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_ADMIN")
+                                ))
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message")
+                        .value("Reservation not found"))
+                .andExpect(jsonPath("$.path")
+                        .value("/api/reservations/99/complete"));
+
+        verify(reservationService)
+                .completeReservation(reservationId);
+    }
+
+    @Test
+    void shouldReturnConflictWhenReservationCannotBeCompleted()
+            throws Exception {
+
+        Long reservationId = 10L;
+
+        when(reservationService.completeReservation(reservationId))
+                .thenThrow(new InvalidReservationStatusException(
+                        "Only confirmed reservations can be completed"
+                ));
+
+        mockMvc.perform(
+                        patch("/api/reservations/{reservationId}/complete",
+                                reservationId)
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_ADMIN")
+                                ))
+                )
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error").value("Conflict"))
+                .andExpect(jsonPath("$.message")
+                        .value("Only confirmed reservations can be completed"))
+                .andExpect(jsonPath("$.path")
+                        .value("/api/reservations/10/complete"));
+
+        verify(reservationService)
+                .completeReservation(reservationId);
+    }
+
+    private RequestPostProcessor clientJwt(Long userId) {
+        return jwt()
+                .jwt(jwt -> jwt.subject(userId.toString()))
+                .authorities(
+                        new SimpleGrantedAuthority("ROLE_CLIENT")
+                );
     }
 
 }

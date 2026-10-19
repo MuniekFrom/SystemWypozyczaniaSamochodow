@@ -28,19 +28,87 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
-                        .requestMatchers(HttpMethod.PATCH, "/api/users/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/cars").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/cars/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/cars/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/cars", "/api/cars/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/reservations").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/reservations").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/reservations/*/confirm").hasRole("ADMIN")
+                        // Publiczne endpointy
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/users"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/auth/login"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/cars",
+                                "/api/cars/**"
+                        ).permitAll()
+
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/users/me"
+                        ).authenticated()
+
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/users",
+                                "/api/users/*"
+                        ).hasRole("ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/users/**"
+                        ).hasRole("ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/cars"
+                        ).hasAnyRole("ADMIN", "EMPLOYEE")
+
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/cars/**"
+                        ).hasAnyRole("ADMIN", "EMPLOYEE")
+
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/cars/**"
+                        ).hasAnyRole("ADMIN", "EMPLOYEE")
+
+                        // Operacje klienta
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/reservations"
+                        ).hasRole("CLIENT")
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/reservations/me"
+                        ).hasRole("CLIENT")
+
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/reservations/*/cancel"
+                        ).hasRole("CLIENT")
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/reservations"
+                        ).hasAnyRole("ADMIN", "EMPLOYEE")
+
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/reservations/*/confirm"
+                        ).hasAnyRole("ADMIN", "EMPLOYEE")
+
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/reservations/*/complete"
+                        ).hasAnyRole("ADMIN", "EMPLOYEE")
+
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

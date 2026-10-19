@@ -88,4 +88,14 @@ public class ReservationController {
         return ResponseEntity.ok(response);
     }
 
+    @PatchMapping("/{reservationId}/complete")
+    public ResponseEntity<ReservationResponse> completeReservation(
+            @PathVariable Long reservationId
+    ) {
+        ReservationResponse response =
+                reservationService.completeReservation(reservationId);
+
+        return ResponseEntity.ok(response);
+    }
+
 }
