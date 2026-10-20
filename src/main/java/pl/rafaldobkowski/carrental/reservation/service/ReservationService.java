@@ -11,15 +11,13 @@ import pl.rafaldobkowski.carrental.reservation.dto.CreateReservationRequest;
 import pl.rafaldobkowski.carrental.reservation.dto.ReservationResponse;
 import pl.rafaldobkowski.carrental.reservation.exception.CarNotAvailableException;
 import pl.rafaldobkowski.carrental.reservation.exception.InvalidReservationPeriodException;
+import pl.rafaldobkowski.carrental.reservation.exception.ReservationNotFoundException;
 import pl.rafaldobkowski.carrental.reservation.model.Reservation;
 import pl.rafaldobkowski.carrental.reservation.model.ReservationStatus;
 import pl.rafaldobkowski.carrental.reservation.repository.ReservationRepository;
 import pl.rafaldobkowski.carrental.user.exception.UserNotFoundException;
 import pl.rafaldobkowski.carrental.user.model.User;
 import pl.rafaldobkowski.carrental.user.repository.UserRepository;
-import pl.rafaldobkowski.carrental.reservation.exception.ReservationNotFoundException;
-
-import java.util.List;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -46,7 +44,8 @@ public class ReservationService {
     private static final List<ReservationStatus> BLOCKING_STATUSES =
             List.of(
                     ReservationStatus.PENDING,
-                    ReservationStatus.CONFIRMED
+                    ReservationStatus.CONFIRMED,
+                    ReservationStatus.IN_PROGRESS
             );
 
     private void validatePeriod(CreateReservationRequest request) {
@@ -211,6 +210,19 @@ public class ReservationService {
     }
 
     @Transactional
+    public ReservationResponse startReservation(Long reservationId) {
+        Reservation reservation = reservationRepository
+                .findById(reservationId)
+                .orElseThrow(() -> new ReservationNotFoundException(
+                        "Reservation not found"
+                ));
+
+        reservation.startRental();
+
+        return mapToResponse(reservation);
+    }
+
+    @Transactional
     public ReservationResponse completeReservation(Long reservationId) {
         Reservation reservation = reservationRepository
                 .findById(reservationId)
@@ -222,5 +234,6 @@ public class ReservationService {
 
         return mapToResponse(reservation);
     }
+
 
 }

@@ -109,6 +109,11 @@ public class SecurityConfig {
                                 "/api/reservations/*/complete"
                         ).hasAnyRole("ADMIN", "EMPLOYEE")
 
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/reservations/*/start"
+                        ).hasAnyRole("ADMIN", "EMPLOYEE")
+
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

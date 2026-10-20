@@ -104,7 +104,8 @@ class ReservationRepositoryIntegrationTest {
                         LocalDate.of(2026, 11, 14),
                         List.of(
                                 ReservationStatus.PENDING,
-                                ReservationStatus.CONFIRMED
+                                ReservationStatus.CONFIRMED,
+                                ReservationStatus.IN_PROGRESS
                         )
                 );
 
@@ -131,10 +132,41 @@ class ReservationRepositoryIntegrationTest {
                         LocalDate.of(2026, 11, 14),
                         List.of(
                                 ReservationStatus.PENDING,
-                                ReservationStatus.CONFIRMED
+                                ReservationStatus.CONFIRMED,
+                                ReservationStatus.IN_PROGRESS
                         )
                 );
 
         assertFalse(overlap);
+    }
+
+    @Test
+    void shouldDetectOverlapForInProgressReservation() {
+        Reservation reservation = new Reservation(
+                user,
+                car,
+                LocalDate.of(2026, 11, 10),
+                LocalDate.of(2026, 11, 12),
+                new BigDecimal("399.98")
+        );
+
+        reservation.confirm();
+        reservation.startRental();
+
+        reservationRepository.saveAndFlush(reservation);
+
+        boolean overlap =
+                reservationRepository.existsOverlappingReservation(
+                        car.getId(),
+                        LocalDate.of(2026, 11, 11),
+                        LocalDate.of(2026, 11, 14),
+                        List.of(
+                                ReservationStatus.PENDING,
+                                ReservationStatus.CONFIRMED,
+                                ReservationStatus.IN_PROGRESS
+                        )
+                );
+
+        assertTrue(overlap);
     }
 }

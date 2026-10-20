@@ -114,13 +114,23 @@ public class Reservation {
     }
 
     public void complete() {
-        if (status != ReservationStatus.CONFIRMED) {
+        if (status != ReservationStatus.IN_PROGRESS) {
             throw new InvalidReservationStatusException(
-                    "Only confirmed reservations can be completed"
+                    "Only in-progress reservations can be completed"
             );
         }
 
         status = ReservationStatus.COMPLETED;
+    }
+
+    public void startRental() {
+        if (status != ReservationStatus.CONFIRMED) {
+            throw new InvalidReservationStatusException(
+                    "Only confirmed reservations can be started"
+            );
+        }
+
+        status = ReservationStatus.IN_PROGRESS;
     }
 
 }

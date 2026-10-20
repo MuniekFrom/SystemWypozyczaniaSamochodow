@@ -307,7 +307,8 @@ class ReservationServiceTest {
                 endDate,
                 List.of(
                         ReservationStatus.PENDING,
-                        ReservationStatus.CONFIRMED
+                        ReservationStatus.CONFIRMED,
+                        ReservationStatus.IN_PROGRESS
                 )
         )).thenReturn(true);
 
@@ -332,7 +333,8 @@ class ReservationServiceTest {
                         endDate,
                         List.of(
                                 ReservationStatus.PENDING,
-                                ReservationStatus.CONFIRMED
+                                ReservationStatus.CONFIRMED,
+                                ReservationStatus.IN_PROGRESS
                         )
                 );
 
@@ -383,7 +385,8 @@ class ReservationServiceTest {
                 endDate,
                 List.of(
                         ReservationStatus.PENDING,
-                        ReservationStatus.CONFIRMED
+                        ReservationStatus.CONFIRMED,
+                        ReservationStatus.IN_PROGRESS
                 )
         )).thenReturn(false);
 
@@ -756,43 +759,6 @@ class ReservationServiceTest {
     }
 
     @Test
-    void shouldCompleteConfirmedReservation() {
-        Long reservationId = 10L;
-
-        User user = createTestUser();
-        Car car = createTestCar();
-
-        Reservation reservation = new Reservation(
-                user,
-                car,
-                LocalDate.now().plusDays(1),
-                LocalDate.now().plusDays(3),
-                new BigDecimal("399.98")
-        );
-
-        reservation.confirm();
-
-        when(reservationRepository.findById(reservationId))
-                .thenReturn(Optional.of(reservation));
-
-        ReservationResponse response =
-                reservationService.completeReservation(reservationId);
-
-        assertEquals(
-                ReservationStatus.COMPLETED,
-                reservation.getStatus()
-        );
-
-        assertEquals(
-                ReservationStatus.COMPLETED,
-                response.status()
-        );
-
-        verify(reservationRepository)
-                .findById(reservationId);
-    }
-
-    @Test
     void shouldThrowReservationNotFoundWhenCompletingMissingReservation() {
         Long reservationId = 99L;
 
@@ -837,7 +803,7 @@ class ReservationServiceTest {
         );
 
         assertEquals(
-                "Only confirmed reservations can be completed",
+                "Only in-progress reservations can be completed",
                 exception.getMessage()
         );
 
@@ -848,6 +814,138 @@ class ReservationServiceTest {
 
         verify(reservationRepository)
                 .findById(reservationId);
+    }
+
+    @Test
+    void shouldCompleteInProgressReservation() {
+        Long reservationId = 10L;
+
+        User user = createTestUser();
+        Car car = createTestCar();
+
+        Reservation reservation = new Reservation(
+                user,
+                car,
+                LocalDate.now().plusDays(1),
+                LocalDate.now().plusDays(3),
+                new BigDecimal("399.98")
+        );
+
+        reservation.confirm();
+        reservation.startRental();
+
+        when(reservationRepository.findById(reservationId))
+                .thenReturn(Optional.of(reservation));
+
+        ReservationResponse response =
+                reservationService.completeReservation(reservationId);
+
+        assertEquals(
+                ReservationStatus.COMPLETED,
+                reservation.getStatus()
+        );
+
+        assertEquals(
+                ReservationStatus.COMPLETED,
+                response.status()
+        );
+
+        verify(reservationRepository)
+                .findById(reservationId);
+    }
+
+    @Test
+    void shouldStartConfirmedReservation() {
+        Long reservationId = 10L;
+
+        User user = createTestUser();
+        Car car = createTestCar();
+
+        Reservation reservation = new Reservation(
+                user,
+                car,
+                LocalDate.now().plusDays(1),
+                LocalDate.now().plusDays(3),
+                new BigDecimal("399.98")
+        );
+
+        reservation.confirm();
+
+        when(reservationRepository.findById(reservationId))
+                .thenReturn(Optional.of(reservation));
+
+        ReservationResponse response =
+                reservationService.startReservation(reservationId);
+
+        assertEquals(
+                ReservationStatus.IN_PROGRESS,
+                reservation.getStatus()
+        );
+
+        assertEquals(
+                ReservationStatus.IN_PROGRESS,
+                response.status()
+        );
+
+        verify(reservationRepository)
+                .findById(reservationId);
+    }
+
+    @Test
+    void shouldThrowReservationNotFoundWhenStartingMissingReservation() {
+        Long reservationId = 99L;
+
+        when(reservationRepository.findById(reservationId))
+                .thenReturn(Optional.empty());
+
+        ReservationNotFoundException exception = assertThrows(
+                ReservationNotFoundException.class,
+                () -> reservationService.startReservation(reservationId)
+        );
+
+        assertEquals(
+                "Reservation not found",
+                exception.getMessage()
+        );
+
+        verify(reservationRepository)
+                .findById(reservationId);
+    }
+
+    @Test
+    void shouldRejectStartingPendingReservation() {
+        Long reservationId = 10L;
+
+        User user = createTestUser();
+        Car car = createTestCar();
+
+        Reservation reservation = new Reservation(
+                user,
+                car,
+                LocalDate.of(2026, 11, 10),
+                LocalDate.of(2026, 11, 12),
+                new BigDecimal("399.98")
+        );
+
+        when(reservationRepository.findById(reservationId))
+                .thenReturn(Optional.of(reservation));
+
+        InvalidReservationStatusException exception = assertThrows(
+                InvalidReservationStatusException.class,
+                () -> reservationService.startReservation(reservationId)
+        );
+
+        assertEquals(
+                "Only confirmed reservations can be started",
+                exception.getMessage()
+        );
+
+        assertEquals(
+                ReservationStatus.PENDING,
+                reservation.getStatus()
+        );
+
+        verify(reservationRepository).findById(reservationId);
     }
 
     private User createTestUser(){

@@ -763,7 +763,7 @@ class ReservationControllerTest {
 
         when(reservationService.completeReservation(reservationId))
                 .thenThrow(new InvalidReservationStatusException(
-                        "Only confirmed reservations can be completed"
+                        "Only in-progress reservations can be completed"
                 ));
 
         mockMvc.perform(
@@ -777,12 +777,143 @@ class ReservationControllerTest {
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.error").value("Conflict"))
                 .andExpect(jsonPath("$.message")
-                        .value("Only confirmed reservations can be completed"))
+                        .value("Only in-progress reservations can be completed"))
                 .andExpect(jsonPath("$.path")
                         .value("/api/reservations/10/complete"));
 
         verify(reservationService)
                 .completeReservation(reservationId);
+    }
+
+    @Test
+    void shouldStartReservationForEmployee() throws Exception {
+        Long reservationId = 1L;
+
+        ReservationResponse response = new ReservationResponse(
+                reservationId,
+                2L,
+                "jan.kowalski@example.com",
+                3L,
+                "Toyota",
+                "Corolla",
+                LocalDate.of(2026, 11, 10),
+                LocalDate.of(2026, 11, 12),
+                new BigDecimal("399.98"),
+                ReservationStatus.IN_PROGRESS,
+                Instant.parse("2026-10-21T10:00:00Z")
+        );
+
+        when(reservationService.startReservation(reservationId))
+                .thenReturn(response);
+
+        mockMvc.perform(
+                        patch(
+                                "/api/reservations/{reservationId}/start",
+                                reservationId
+                        )
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_EMPLOYEE")
+                                ))
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_JSON
+                ))
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.status").value("IN_PROGRESS"))
+                .andExpect(jsonPath("$.carBrand").value("Toyota"))
+                .andExpect(jsonPath("$.carModel").value("Corolla"));
+
+        verify(reservationService).startReservation(reservationId);
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenClientStartsReservation() throws Exception {
+        mockMvc.perform(
+                        patch("/api/reservations/{reservationId}/start", 1L)
+                                .with(clientJwt(1L))
+                )
+                .andExpect(status().isForbidden());
+
+        verify(reservationService, never())
+                .startReservation(anyLong());
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenStartingReservationWithoutToken()
+            throws Exception {
+
+        mockMvc.perform(
+                        patch("/api/reservations/{reservationId}/start", 1L)
+                )
+                .andExpect(status().isUnauthorized());
+
+        verify(reservationService, never())
+                .startReservation(anyLong());
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenStartingMissingReservation()
+            throws Exception {
+
+        Long reservationId = 99L;
+
+        when(reservationService.startReservation(reservationId))
+                .thenThrow(new ReservationNotFoundException(
+                        "Reservation not found"
+                ));
+
+        mockMvc.perform(
+                        patch(
+                                "/api/reservations/{reservationId}/start",
+                                reservationId
+                        )
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_EMPLOYEE")
+                                ))
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message")
+                        .value("Reservation not found"))
+                .andExpect(jsonPath("$.path")
+                        .value("/api/reservations/99/start"));
+
+        verify(reservationService).startReservation(reservationId);
+    }
+
+    @Test
+    void shouldReturnConflictWhenStartingReservationInInvalidStatus()
+            throws Exception {
+
+        Long reservationId = 1L;
+
+        when(reservationService.startReservation(reservationId))
+                .thenThrow(new InvalidReservationStatusException(
+                        "Only confirmed reservations can be started"
+                ));
+
+        mockMvc.perform(
+                        patch(
+                                "/api/reservations/{reservationId}/start",
+                                reservationId
+                        )
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_EMPLOYEE")
+                                ))
+                )
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error").value("Conflict"))
+                .andExpect(jsonPath("$.message").value(
+                        "Only confirmed reservations can be started"
+                ))
+                .andExpect(jsonPath("$.path").value(
+                        "/api/reservations/1/start"
+                ));
+
+        verify(reservationService).startReservation(reservationId);
     }
 
     private RequestPostProcessor clientJwt(Long userId) {

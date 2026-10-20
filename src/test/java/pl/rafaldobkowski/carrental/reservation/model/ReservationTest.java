@@ -48,19 +48,6 @@ class ReservationTest {
         );
     }
 
-    private Reservation createTestReservation() {
-        User user = mock(User.class);
-        Car car = mock(Car.class);
-
-        return new Reservation(
-                user,
-                car,
-                LocalDate.now().plusDays(1),
-                LocalDate.now().plusDays(3),
-                new BigDecimal("399.98")
-        );
-    }
-
     @Test
     void shouldConfirmPendingReservation() {
         Reservation reservation = createTestReservation();
@@ -96,14 +83,23 @@ class ReservationTest {
     }
 
     @Test
-    void shouldCompleteConfirmedReservation() {
+    void shouldRejectCompletingConfirmedReservation() {
         Reservation reservation = createTestReservation();
 
         reservation.confirm();
-        reservation.complete();
+
+        InvalidReservationStatusException exception = assertThrows(
+                InvalidReservationStatusException.class,
+                reservation::complete
+        );
 
         assertEquals(
-                ReservationStatus.COMPLETED,
+                "Only in-progress reservations can be completed",
+                exception.getMessage()
+        );
+
+        assertEquals(
+                ReservationStatus.CONFIRMED,
                 reservation.getStatus()
         );
     }
@@ -118,13 +114,73 @@ class ReservationTest {
         );
 
         assertEquals(
-                "Only confirmed reservations can be completed",
+                "Only in-progress reservations can be completed",
                 exception.getMessage()
         );
 
         assertEquals(
                 ReservationStatus.PENDING,
                 reservation.getStatus()
+        );
+    }
+
+    @Test
+    void shouldCompleteInProgressReservation() {
+        Reservation reservation = createTestReservation();
+
+        reservation.confirm();
+        reservation.startRental();
+        reservation.complete();
+
+        assertEquals(
+                ReservationStatus.COMPLETED,
+                reservation.getStatus()
+        );
+    }
+
+    @Test
+    void shouldStartConfirmedReservation() {
+        Reservation reservation = createTestReservation();
+
+        reservation.confirm();
+        reservation.startRental();
+
+        assertEquals(
+                ReservationStatus.IN_PROGRESS,
+                reservation.getStatus()
+        );
+    }
+
+    @Test
+    void shouldRejectStartingPendingReservation() {
+        Reservation reservation = createTestReservation();
+
+        InvalidReservationStatusException exception = assertThrows(
+                InvalidReservationStatusException.class,
+                reservation::startRental
+        );
+
+        assertEquals(
+                "Only confirmed reservations can be started",
+                exception.getMessage()
+        );
+
+        assertEquals(
+                ReservationStatus.PENDING,
+                reservation.getStatus()
+        );
+    }
+
+    private Reservation createTestReservation() {
+        User user = mock(User.class);
+        Car car = mock(Car.class);
+
+        return new Reservation(
+                user,
+                car,
+                LocalDate.now().plusDays(1),
+                LocalDate.now().plusDays(3),
+                new BigDecimal("399.98")
         );
     }
 
