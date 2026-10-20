@@ -12,6 +12,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import pl.rafaldobkowski.carrental.security.SecurityConfig;
 import pl.rafaldobkowski.carrental.user.dto.CreateUserRequest;
+import pl.rafaldobkowski.carrental.user.dto.UpdateUserRoleRequest;
 import pl.rafaldobkowski.carrental.user.dto.UserResponse;
 import pl.rafaldobkowski.carrental.user.exception.UserAlreadyExistsException;
 import pl.rafaldobkowski.carrental.user.exception.UserNotFoundException;
@@ -460,6 +461,172 @@ class UserControllerTest {
                         .value("/api/users/me"));
 
         verify(userService).getUserById(userId);
+    }
+
+
+    @Test
+    void shouldChangeUserRoleForAdmin() throws Exception {
+        Long userId = 1L;
+
+        UserResponse response = new UserResponse(
+                userId,
+                "Anna",
+                "Nowak",
+                "anna.nowak@example.com",
+                "+48123456789",
+                UserRole.EMPLOYEE,
+                UserStatus.ACTIVE,
+                Instant.parse("2026-10-20T10:00:00Z")
+        );
+
+        when(userService.changeUserRole(
+                eq(userId),
+                any(UpdateUserRoleRequest.class)
+        )).thenReturn(response);
+
+        mockMvc.perform(
+                        patch("/api/users/{userId}/role", userId)
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_ADMIN")
+                                ))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "role": "EMPLOYEE"
+                                    }
+                                    """)
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_JSON
+                ))
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.role").value("EMPLOYEE"))
+                .andExpect(jsonPath("$.status").value("ACTIVE"));
+
+        ArgumentCaptor<UpdateUserRoleRequest> requestCaptor =
+                ArgumentCaptor.forClass(UpdateUserRoleRequest.class);
+
+        verify(userService).changeUserRole(
+                eq(userId),
+                requestCaptor.capture()
+        );
+
+        assertEquals(
+                UserRole.EMPLOYEE,
+                requestCaptor.getValue().role()
+        );
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenEmployeeChangesUserRole()
+            throws Exception {
+
+        mockMvc.perform(
+                        patch("/api/users/{userId}/role", 1L)
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority(
+                                                "ROLE_EMPLOYEE"
+                                        )
+                                ))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "role": "EMPLOYEE"
+                                    }
+                                    """)
+                )
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenChangingUserRoleWithoutToken()
+            throws Exception {
+
+        mockMvc.perform(
+                        patch("/api/users/{userId}/role", 1L)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "role": "EMPLOYEE"
+                                    }
+                                    """)
+                )
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(userService);
+    }
+
+
+    @Test
+    void shouldReturnBadRequestWhenRoleIsMissing()
+            throws Exception {
+
+        mockMvc.perform(
+                        patch("/api/users/{userId}/role", 1L)
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority(
+                                                "ROLE_ADMIN"
+                                        )
+                                ))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "role": null
+                                    }
+                                    """)
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").exists())
+                .andExpect(jsonPath("$.path")
+                        .value("/api/users/1/role"));
+
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenChangingRoleOfMissingUser()
+            throws Exception {
+
+        Long userId = 99L;
+
+        when(userService.changeUserRole(
+                eq(userId),
+                any(UpdateUserRoleRequest.class)
+        )).thenThrow(new UserNotFoundException(
+                "User with id 99 was not found"
+        ));
+
+        mockMvc.perform(
+                        patch("/api/users/{userId}/role", userId)
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority(
+                                                "ROLE_ADMIN"
+                                        )
+                                ))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                    {
+                                      "role": "EMPLOYEE"
+                                    }
+                                    """)
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message")
+                        .value("User with id 99 was not found"))
+                .andExpect(jsonPath("$.path")
+                        .value("/api/users/99/role"));
+
+        verify(userService).changeUserRole(
+                eq(userId),
+                any(UpdateUserRoleRequest.class)
+        );
     }
 
 }

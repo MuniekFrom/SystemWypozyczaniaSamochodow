@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import pl.rafaldobkowski.carrental.user.dto.CreateUserRequest;
+import pl.rafaldobkowski.carrental.user.dto.UpdateUserRoleRequest;
 import pl.rafaldobkowski.carrental.user.dto.UserResponse;
 import pl.rafaldobkowski.carrental.user.exception.UserAlreadyExistsException;
 import pl.rafaldobkowski.carrental.user.exception.UserNotFoundException;
@@ -259,6 +260,63 @@ class UserServiceTest {
 
         verify(userRepository).findById(userId);
         verifyNoInteractions(passwordEncoder);
+    }
+
+    @Test
+    void shouldChangeUserRoleToEmployee() {
+        Long userId = 1L;
+
+        User user = new User(
+                "Anna",
+                "Nowak",
+                "anna.nowak@example.com",
+                "stored-password-hash",
+                "+48123456789"
+        );
+
+        UpdateUserRoleRequest request =
+                new UpdateUserRoleRequest(UserRole.EMPLOYEE);
+
+        when(userRepository.findById(userId))
+                .thenReturn(Optional.of(user));
+
+        UserResponse response =
+                userService.changeUserRole(userId, request);
+
+        assertEquals(
+                UserRole.EMPLOYEE,
+                user.getRole()
+        );
+
+        assertEquals(
+                UserRole.EMPLOYEE,
+                response.role()
+        );
+
+        verify(userRepository).findById(userId);
+    }
+
+    @Test
+    void shouldThrowUserNotFoundWhenChangingRole() {
+        Long userId = 99L;
+
+        UpdateUserRoleRequest request =
+                new UpdateUserRoleRequest(UserRole.EMPLOYEE);
+
+        when(userRepository.findById(userId))
+                .thenReturn(Optional.empty());
+
+        UserNotFoundException exception = assertThrows(
+                UserNotFoundException.class,
+                () -> userService.changeUserRole(userId, request)
+        );
+
+        assertEquals(
+                "User with id 99 was not found",
+                exception.getMessage()
+        );
+
+        verify(userRepository).findById(userId);
     }
 
 }

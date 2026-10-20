@@ -7,6 +7,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import pl.rafaldobkowski.carrental.user.dto.CreateUserRequest;
+import pl.rafaldobkowski.carrental.user.dto.UpdateUserRoleRequest;
 import pl.rafaldobkowski.carrental.user.dto.UserResponse;
 import pl.rafaldobkowski.carrental.user.service.UserService;
 
@@ -66,6 +67,17 @@ public class UserController {
         UserResponse user = userService.getUserById(userId);
 
         return ResponseEntity.ok(user);
+    }
+
+    @PatchMapping("/{userId}/role")
+    public ResponseEntity<UserResponse> changeUserRole(
+            @PathVariable Long userId,
+            @Valid @RequestBody UpdateUserRoleRequest request
+    ) {
+        UserResponse response =
+                userService.changeUserRole(userId, request);
+
+        return ResponseEntity.ok(response);
     }
 
 }
