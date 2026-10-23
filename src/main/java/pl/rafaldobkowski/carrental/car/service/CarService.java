@@ -4,17 +4,28 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rafaldobkowski.carrental.car.dto.CarResponse;
 import pl.rafaldobkowski.carrental.car.dto.CreateCarRequest;
+import pl.rafaldobkowski.carrental.car.dto.UpdateCarRequest;
 import pl.rafaldobkowski.carrental.car.dto.UpdateCarStatusRequest;
 import pl.rafaldobkowski.carrental.car.exception.CarAlreadyExistsException;
 import pl.rafaldobkowski.carrental.car.exception.CarNotFoundException;
 import pl.rafaldobkowski.carrental.car.model.Car;
+import pl.rafaldobkowski.carrental.car.model.CarStatus;
 import pl.rafaldobkowski.carrental.car.repository.CarRepository;
-import pl.rafaldobkowski.carrental.car.dto.UpdateCarRequest;
+import pl.rafaldobkowski.carrental.reservation.exception.InvalidReservationPeriodException;
+import pl.rafaldobkowski.carrental.reservation.model.ReservationStatus;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
 public class CarService {
+
+    private static final List<ReservationStatus> BLOCKING_STATUSES =
+            List.of(
+                    ReservationStatus.PENDING,
+                    ReservationStatus.CONFIRMED,
+                    ReservationStatus.IN_PROGRESS
+            );
 
     private final CarRepository carRepository;
 
@@ -130,6 +141,34 @@ public class CarService {
         return mapToResponse(car);
 
 
+    }
+
+    @Transactional(readOnly = true)
+    public List<CarResponse> getAvailableCars(
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        if (startDate.isBefore(LocalDate.now())) {
+            throw new InvalidReservationPeriodException(
+                    "Start date cannot be in the past"
+            );
+        }
+
+        if (!endDate.isAfter(startDate)) {
+            throw new InvalidReservationPeriodException(
+                    "End date must be after start date"
+            );
+        }
+
+        return carRepository.findAvailableCars(
+                        startDate,
+                        endDate,
+                        CarStatus.ACTIVE,
+                        BLOCKING_STATUSES
+                )
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     private Car findCarByIdOrThrow(Long id) {

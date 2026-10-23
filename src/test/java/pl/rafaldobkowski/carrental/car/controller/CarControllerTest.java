@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import pl.rafaldobkowski.carrental.car.dto.CarResponse;
@@ -14,9 +16,11 @@ import pl.rafaldobkowski.carrental.car.exception.CarAlreadyExistsException;
 import pl.rafaldobkowski.carrental.car.exception.CarNotFoundException;
 import pl.rafaldobkowski.carrental.car.model.*;
 import pl.rafaldobkowski.carrental.car.service.CarService;
+import pl.rafaldobkowski.carrental.reservation.exception.InvalidReservationPeriodException;
 import pl.rafaldobkowski.carrental.security.SecurityConfig;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -25,9 +29,6 @@ import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
 
 
 @WebMvcTest(CarController.class)
@@ -248,4 +249,117 @@ class CarControllerTest {
 
         verifyNoInteractions(carService);
     }
+
+    @Test
+    void shouldReturnAvailableCarsForSelectedPeriod() throws Exception {
+        LocalDate startDate = LocalDate.of(2026, 11, 20);
+        LocalDate endDate = LocalDate.of(2026, 11, 22);
+
+        CarResponse carResponse = createTestCarResponse();
+
+        when(carService.getAvailableCars(startDate, endDate))
+                .thenReturn(List.of(carResponse));
+
+        mockMvc.perform(
+                        get("/api/cars/available")
+                                .param(
+                                        "startDate",
+                                        startDate.toString()
+                                )
+                                .param(
+                                        "endDate",
+                                        endDate.toString()
+                                )
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_JSON
+                ))
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].brand").value("Toyota"))
+                .andExpect(jsonPath("$[0].model").value("Corolla"))
+                .andExpect(jsonPath("$[0].dailyPrice").value(199.99))
+                .andExpect(jsonPath("$[0].status").value("ACTIVE"));
+
+        verify(carService).getAvailableCars(
+                startDate,
+                endDate
+        );
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenAvailabilityPeriodIsInvalid()
+            throws Exception {
+
+        LocalDate startDate = LocalDate.of(2026, 11, 20);
+        LocalDate endDate = LocalDate.of(2026, 11, 20);
+
+        when(carService.getAvailableCars(startDate, endDate))
+                .thenThrow(new InvalidReservationPeriodException(
+                        "End date must be after start date"
+                ));
+
+        mockMvc.perform(
+                        get("/api/cars/available")
+                                .param(
+                                        "startDate",
+                                        startDate.toString()
+                                )
+                                .param(
+                                        "endDate",
+                                        endDate.toString()
+                                )
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value(
+                        "End date must be after start date"
+                ))
+                .andExpect(jsonPath("$.path").value(
+                        "/api/cars/available"
+                ));
+
+        verify(carService).getAvailableCars(
+                startDate,
+                endDate
+        );
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenEndDateIsMissing()
+            throws Exception {
+
+        mockMvc.perform(
+                        get("/api/cars/available")
+                                .param(
+                                        "startDate",
+                                        "2026-11-20"
+                                )
+                )
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(carService);
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenDateFormatIsInvalid()
+            throws Exception {
+
+        mockMvc.perform(
+                        get("/api/cars/available")
+                                .param(
+                                        "startDate",
+                                        "20-11-2026"
+                                )
+                                .param(
+                                        "endDate",
+                                        "2026-11-22"
+                                )
+                )
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(carService);
+    }
+
 }

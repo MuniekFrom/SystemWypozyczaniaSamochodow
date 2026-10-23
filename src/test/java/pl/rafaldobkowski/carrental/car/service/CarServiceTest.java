@@ -8,13 +8,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import pl.rafaldobkowski.carrental.car.dto.CarResponse;
 import pl.rafaldobkowski.carrental.car.dto.CreateCarRequest;
 import pl.rafaldobkowski.carrental.car.dto.UpdateCarRequest;
+import pl.rafaldobkowski.carrental.car.dto.UpdateCarStatusRequest;
 import pl.rafaldobkowski.carrental.car.exception.CarAlreadyExistsException;
 import pl.rafaldobkowski.carrental.car.exception.CarNotFoundException;
 import pl.rafaldobkowski.carrental.car.model.*;
 import pl.rafaldobkowski.carrental.car.repository.CarRepository;
-import pl.rafaldobkowski.carrental.car.dto.UpdateCarStatusRequest;
+import pl.rafaldobkowski.carrental.reservation.exception.InvalidReservationPeriodException;
+import pl.rafaldobkowski.carrental.reservation.model.ReservationStatus;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -267,6 +271,85 @@ class CarServiceTest {
                 .existsByRegistrationNumberAndIdNot(
                         request.registrationNumber(), carId
                 );
+    }
+
+    @Test
+    void shouldReturnAvailableCarsForValidPeriod() {
+        LocalDate startDate = LocalDate.now().plusDays(1);
+        LocalDate endDate = LocalDate.now().plusDays(3);
+
+        Car car = createTestCar();
+
+        List<ReservationStatus> blockingStatuses =
+                List.of(
+                        ReservationStatus.PENDING,
+                        ReservationStatus.CONFIRMED,
+                        ReservationStatus.IN_PROGRESS
+                );
+
+        when(carRepository.findAvailableCars(
+                startDate,
+                endDate,
+                CarStatus.ACTIVE,
+                blockingStatuses
+        )).thenReturn(List.of(car));
+
+        List<CarResponse> result =
+                carService.getAvailableCars(startDate, endDate);
+
+        assertEquals(1, result.size());
+        assertEquals("Toyota", result.getFirst().brand());
+        assertEquals("Corolla", result.getFirst().model());
+        assertEquals(CarStatus.ACTIVE, result.getFirst().status());
+
+        verify(carRepository).findAvailableCars(
+                startDate,
+                endDate,
+                CarStatus.ACTIVE,
+                blockingStatuses
+        );
+    }
+
+    @Test
+    void shouldRejectAvailabilitySearchStartingInPast() {
+        LocalDate startDate = LocalDate.now().minusDays(1);
+        LocalDate endDate = LocalDate.now().plusDays(2);
+
+        InvalidReservationPeriodException exception = assertThrows(
+                InvalidReservationPeriodException.class,
+                () -> carService.getAvailableCars(
+                        startDate,
+                        endDate
+                )
+        );
+
+        assertEquals(
+                "Start date cannot be in the past",
+                exception.getMessage()
+        );
+
+        verifyNoInteractions(carRepository);
+    }
+
+    @Test
+    void shouldRejectAvailabilitySearchWhenEndDateIsNotAfterStartDate() {
+        LocalDate startDate = LocalDate.now().plusDays(2);
+        LocalDate endDate = startDate;
+
+        InvalidReservationPeriodException exception = assertThrows(
+                InvalidReservationPeriodException.class,
+                () -> carService.getAvailableCars(
+                        startDate,
+                        endDate
+                )
+        );
+
+        assertEquals(
+                "End date must be after start date",
+                exception.getMessage()
+        );
+
+        verifyNoInteractions(carRepository);
     }
 
 }

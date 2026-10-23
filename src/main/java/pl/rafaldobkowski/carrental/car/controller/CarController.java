@@ -1,6 +1,7 @@
 package pl.rafaldobkowski.carrental.car.controller;
 
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,6 +11,7 @@ import pl.rafaldobkowski.carrental.car.dto.UpdateCarRequest;
 import pl.rafaldobkowski.carrental.car.dto.UpdateCarStatusRequest;
 import pl.rafaldobkowski.carrental.car.service.CarService;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -34,6 +36,22 @@ public class CarController {
     @GetMapping
     public ResponseEntity<List<CarResponse>> getAllCars() {
         List<CarResponse> cars = carService.getAllCars();
+
+        return ResponseEntity.ok(cars);
+    }
+
+    @GetMapping("/available")
+    public ResponseEntity<List<CarResponse>> getAvailableCars(
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate startDate,
+
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate endDate
+    ) {
+        List<CarResponse> cars =
+                carService.getAvailableCars(startDate, endDate);
 
         return ResponseEntity.ok(cars);
     }
