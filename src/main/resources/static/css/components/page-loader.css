@@ -1,0 +1,223 @@
+body.is-loading {
+    overflow: hidden;
+}
+
+.page-loader {
+    --intro-scene-duration: 2400ms;
+    --intro-exit-duration: 700ms;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 20px;
+
+    padding: 32px;
+
+    background-color: #ffffff;
+
+    opacity: 1;
+    visibility: visible;
+
+    transition:
+            opacity var(--intro-exit-duration) ease,
+            visibility var(--intro-exit-duration) ease;
+}
+
+.page-loader--hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.page-loader__visual {
+    position: relative;
+    width: min(92vw, 1000px);
+
+    overflow: hidden;
+    isolation: isolate;
+
+    animation: car-entrance 900ms
+    cubic-bezier(0.22, 1, 0.36, 1)
+    both;
+}
+
+.page-loader__car {
+    display: block;
+    width: 100%;
+    height: auto;
+
+    transform-origin: center;
+}
+
+.page-loader__light {
+    position: absolute;
+    top: -25%;
+    bottom: -25%;
+    left: -30%;
+
+    width: 18%;
+
+    background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.25) 20%,
+            rgba(255, 255, 255, 0.98) 50%,
+            rgba(255, 255, 255, 0.25) 80%,
+            transparent 100%
+    );
+
+    filter:
+            drop-shadow(0 0 10px #ffffff)
+            drop-shadow(0 0 24px rgba(37, 99, 235, 0.7));
+
+    transform: skewX(-18deg);
+
+    animation: light-sweep 1450ms
+    cubic-bezier(0.4, 0, 0.2, 1)
+    500ms
+    forwards;
+
+    pointer-events: none;
+}
+
+.page-loader__text {
+    margin: 0;
+
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+
+    animation: loader-text 800ms ease 300ms both;
+}
+
+.page-loader__progress {
+    width: min(280px, 70vw);
+    height: 4px;
+
+    overflow: hidden;
+
+    background-color: var(--color-primary-light);
+    border-radius: 999px;
+}
+
+.page-loader__progress span {
+    display: block;
+    width: 100%;
+    height: 100%;
+
+    background: linear-gradient(
+            90deg,
+            var(--color-primary),
+            #60a5fa
+    );
+
+    border-radius: inherit;
+    transform-origin: left;
+
+    animation: loader-progress 2200ms ease-out both;
+}
+
+.page-content {
+    opacity: 1;
+    transform: none;
+}
+
+body.is-loading .page-content {
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(12px);
+}
+
+body.is-ready .page-content {
+    animation: page-entrance 700ms ease forwards;
+}
+
+@keyframes car-entrance {
+    from {
+        opacity: 0;
+        transform: scale(0.92) translateY(24px);
+        filter: blur(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        filter: blur(0);
+    }
+}
+
+@keyframes light-sweep {
+    from {
+        left: -30%;
+    }
+
+    to {
+        left: 115%;
+    }
+}
+
+@keyframes loader-text {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes loader-progress {
+    from {
+        transform: scaleX(0);
+    }
+
+    to {
+        transform: scaleX(1);
+    }
+}
+
+@keyframes page-entrance {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .page-loader__visual,
+    .page-loader__light,
+    .page-loader__text,
+    .page-loader__progress span,
+    body.is-ready .page-content {
+        animation: none;
+    }
+}
+
+/* Oba warianty czekają na przygotowanie obrazu. */
+.page-loader:not(.is-playing) *,
+.page-loader:not(.is-playing) *::before,
+.page-loader:not(.is-playing) *::after {
+    animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .page-loader { transition: none; }
+
+    body.is-ready .page-content {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+}

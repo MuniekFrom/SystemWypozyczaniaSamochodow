@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel klienta | Car Rental</title>
+
+    <link rel="preload" as="image" href="/images/hero/loading-page-car.webp">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/components/page-loader.css">
+    <link rel="stylesheet" href="/css/pages/client.css">
+
+    <noscript>
+        <style>
+            #page-loader { display: none; }
+            body.is-loading { overflow: auto; }
+            body.is-loading .page-content { visibility: visible; opacity: 1; transform: none; }
+        </style>
+    </noscript>
+</head>
+<body class="is-loading">
+
+<div
+        id="page-loader"
+        class="page-loader"
+        data-loader-image="/images/hero/loading-page-car.webp"
+        role="status"
+        aria-label="Ładowanie strony"
+>
+    <div class="page-loader__visual">
+        <img
+                class="page-loader__car"
+                src="/images/hero/loading-page-car.webp"
+                alt=""
+                width="1920"
+                height="1080"
+        >
+        <span class="page-loader__light" aria-hidden="true"></span>
+    </div>
+
+    <p class="page-loader__text">Przygotowujemy samochód...</p>
+
+    <div class="page-loader__progress" aria-hidden="true">
+        <span></span>
+    </div>
+</div>
+
+<div class="page-content">
+    <header class="site-header">
+        <div class="container site-header__content">
+            <a class="brand" href="/" aria-label="Car Rental – strona główna">
+                <span class="brand__mark" aria-hidden="true">CR</span>
+                <span>Car Rental</span>
+            </a>
+
+            <nav class="navigation" aria-label="Główna nawigacja">
+                <a class="button button--outline" href="/html/login.html">Logowanie</a>
+                <a class="button button--primary" href="/html/register.html">Rejestracja</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container card">
+        <h1>Panel klienta</h1>
+        <p>Twoje rezerwacje i dane konta.</p>
+        <a class="button button--outline" href="/">Wróć na stronę główną</a>
+    </main>
+</div>
+
+<script type="module" src="/js/pages/client.js"></script>
+</body>
+</html>
