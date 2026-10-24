@@ -49,7 +49,11 @@ public class CarService {
                 car.getColor(),
                 car.getDailyPrice(),
                 car.getStatus(),
-                car.getDescription()
+                car.getDescription(),
+                car.getEngineCapacityCm3(),
+                car.getPowerHp(),
+                car.getDriveType(),
+                car.getAccelerationTo100Seconds()
         );
     }
 
@@ -57,14 +61,21 @@ public class CarService {
     public CarResponse createCar(CreateCarRequest request) {
 
         if (carRepository.existsByVin(request.vin())) {
-            throw new CarAlreadyExistsException("Car with this VIN already exists");
+            throw new CarAlreadyExistsException(
+                    "Car with this VIN already exists"
+            );
         }
 
-        if (carRepository.existsByRegistrationNumber(request.registrationNumber())) {
-            throw new CarAlreadyExistsException("Car with this registration number already exists");
+        if (carRepository.existsByRegistrationNumber(
+                request.registrationNumber()
+        )) {
+            throw new CarAlreadyExistsException(
+                    "Car with this registration number already exists"
+            );
         }
 
-        Car car = new Car(request.brand(),
+        Car car = new Car(
+                request.brand(),
                 request.model(),
                 request.productionYear(),
                 request.registrationNumber(),
@@ -76,7 +87,16 @@ public class CarService {
                 request.category(),
                 request.color(),
                 request.dailyPrice(),
-                request.description());
+                request.description()
+        );
+
+        car.updateTechnicalData(
+                request.engineCapacityCm3(),
+                request.powerHp(),
+                request.driveType(),
+                request.accelerationTo100Seconds()
+        );
+
         Car savedCar = carRepository.save(car);
 
         return mapToResponse(savedCar);
@@ -92,24 +112,34 @@ public class CarService {
 
     @Transactional(readOnly = true)
     public CarResponse getCarById(Long id) {
-
         Car car = findCarByIdOrThrow(id);
 
         return mapToResponse(car);
     }
 
-
     @Transactional
-    public CarResponse updateCar(Long id, UpdateCarRequest request) {
-
+    public CarResponse updateCar(
+            Long id,
+            UpdateCarRequest request
+    ) {
         Car car = findCarByIdOrThrow(id);
 
-        if (carRepository.existsByVinAndIdNot(request.vin(), id)) {
-            throw new CarAlreadyExistsException("Car with this VIN already exists");
+        if (carRepository.existsByVinAndIdNot(
+                request.vin(),
+                id
+        )) {
+            throw new CarAlreadyExistsException(
+                    "Car with this VIN already exists"
+            );
         }
 
-        if (carRepository.existsByRegistrationNumberAndIdNot(request.registrationNumber(), id)) {
-            throw new CarAlreadyExistsException("Car with this registration number already exists");
+        if (carRepository.existsByRegistrationNumberAndIdNot(
+                request.registrationNumber(),
+                id
+        )) {
+            throw new CarAlreadyExistsException(
+                    "Car with this registration number already exists"
+            );
         }
 
         car.updateDetails(
@@ -128,19 +158,26 @@ public class CarService {
                 request.description()
         );
 
+        car.updateTechnicalData(
+                request.engineCapacityCm3(),
+                request.powerHp(),
+                request.driveType(),
+                request.accelerationTo100Seconds()
+        );
+
         return mapToResponse(car);
     }
 
     @Transactional
-    public CarResponse updateCarStatus(Long id, UpdateCarStatusRequest request) {
-
+    public CarResponse updateCarStatus(
+            Long id,
+            UpdateCarStatusRequest request
+    ) {
         Car car = findCarByIdOrThrow(id);
 
         car.changeStatus(request.status());
 
         return mapToResponse(car);
-
-
     }
 
     @Transactional(readOnly = true)
@@ -175,9 +212,10 @@ public class CarService {
         return carRepository.findById(id)
                 .orElseThrow(() ->
                         new CarNotFoundException(
-                                "Car with id " + id + " was not found."
+                                "Car with id "
+                                        + id
+                                        + " was not found."
                         )
                 );
     }
 }
-

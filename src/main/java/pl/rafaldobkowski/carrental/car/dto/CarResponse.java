@@ -19,8 +19,10 @@ public record CarResponse(
         String color,
         BigDecimal dailyPrice,
         CarStatus status,
-        String description
-        ) {
-
-
+        String description,
+        Integer engineCapacityCm3,
+        Integer powerHp,
+        CarDriveType driveType,
+        BigDecimal accelerationTo100Seconds
+) {
 }

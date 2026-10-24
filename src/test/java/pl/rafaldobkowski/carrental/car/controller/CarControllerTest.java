@@ -12,6 +12,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import pl.rafaldobkowski.carrental.car.dto.CarResponse;
 import pl.rafaldobkowski.carrental.car.dto.CreateCarRequest;
+import pl.rafaldobkowski.carrental.car.dto.UpdateCarRequest;
 import pl.rafaldobkowski.carrental.car.exception.CarAlreadyExistsException;
 import pl.rafaldobkowski.carrental.car.exception.CarNotFoundException;
 import pl.rafaldobkowski.carrental.car.model.*;
@@ -29,7 +30,6 @@ import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
 
 @WebMvcTest(CarController.class)
 @Import(SecurityConfig.class)
@@ -60,7 +60,11 @@ class CarControllerTest {
                 "Gray",
                 new BigDecimal("199.99"),
                 CarStatus.ACTIVE,
-                "Samochód testowy"
+                "Samochód testowy",
+                1798,
+                140,
+                CarDriveType.FWD,
+                new BigDecimal("9.20")
         );
     }
 
@@ -79,7 +83,11 @@ class CarControllerTest {
               "category": "STANDARD",
               "color": "Gray",
               "dailyPrice": 199.99,
-              "description": "Samochód testowy"
+              "description": "Samochód testowy",
+              "engineCapacityCm3": 1798,
+              "powerHp": 140,
+              "driveType": "FWD",
+              "accelerationTo100Seconds": 9.20
             }
             """;
     }
@@ -148,21 +156,27 @@ class CarControllerTest {
         when(carService.getCarById(carId))
                 .thenReturn(carResponse);
 
-        mockMvc.perform(get("/api/cars/{id}", carId)
-                        .with(jwt().authorities(
-                                new SimpleGrantedAuthority("ROLE_ADMIN")
-                        )))
+        mockMvc.perform(
+                        get("/api/cars/{id}", carId)
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_ADMIN")
+                                ))
+                )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.brand").value("Toyota"))
                 .andExpect(jsonPath("$.model").value("Corolla"))
-                .andExpect(jsonPath("$.status").value("ACTIVE"));
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.engineCapacityCm3").value(1798))
+                .andExpect(jsonPath("$.powerHp").value(140))
+                .andExpect(jsonPath("$.driveType").value("FWD"))
+                .andExpect(jsonPath("$.accelerationTo100Seconds").value(9.2));
 
         verify(carService).getCarById(carId);
     }
 
     @Test
-    void shouldCreateCarAndReturnCreatedStatus() throws Exception{
+    void shouldCreateCarAndReturnCreatedStatus() throws Exception {
         CarResponse carResponse = createTestCarResponse();
 
         when(carService.createCar(any(CreateCarRequest.class)))
@@ -177,11 +191,16 @@ class CarControllerTest {
                                 .content(validCreateCarJson())
                 )
                 .andExpect(status().isCreated())
-                .andExpect(content()
-                        .contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_JSON
+                ))
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.brand").value("Toyota"))
-                .andExpect(jsonPath("$.status").value("ACTIVE"));
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.engineCapacityCm3").value(1798))
+                .andExpect(jsonPath("$.powerHp").value(140))
+                .andExpect(jsonPath("$.driveType").value("FWD"))
+                .andExpect(jsonPath("$.accelerationTo100Seconds").value(9.2));
 
         ArgumentCaptor<CreateCarRequest> requestCaptor =
                 ArgumentCaptor.forClass(CreateCarRequest.class);
@@ -191,10 +210,29 @@ class CarControllerTest {
         CreateCarRequest capturedRequest = requestCaptor.getValue();
 
         assertEquals("Toyota", capturedRequest.brand());
-        assertEquals("BI12345", capturedRequest.registrationNumber());
+        assertEquals(
+                "BI12345",
+                capturedRequest.registrationNumber()
+        );
         assertEquals(
                 new BigDecimal("199.99"),
                 capturedRequest.dailyPrice()
+        );
+        assertEquals(
+                1798,
+                capturedRequest.engineCapacityCm3()
+        );
+        assertEquals(
+                140,
+                capturedRequest.powerHp()
+        );
+        assertEquals(
+                CarDriveType.FWD,
+                capturedRequest.driveType()
+        );
+        assertEquals(
+                new BigDecimal("9.20"),
+                capturedRequest.accelerationTo100Seconds()
         );
     }
 
@@ -224,7 +262,9 @@ class CarControllerTest {
     }
 
     @Test
-    void shouldReturnUnauthorizedWhenCreatingCarWithoutToken() throws Exception {
+    void shouldReturnUnauthorizedWhenCreatingCarWithoutToken()
+            throws Exception {
+
         mockMvc.perform(
                         post("/api/cars")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -236,7 +276,9 @@ class CarControllerTest {
     }
 
     @Test
-    void shouldReturnForbiddenWhenClientCreatesCar() throws Exception {
+    void shouldReturnForbiddenWhenClientCreatesCar()
+            throws Exception {
+
         mockMvc.perform(
                         post("/api/cars")
                                 .with(jwt().authorities(
@@ -251,7 +293,9 @@ class CarControllerTest {
     }
 
     @Test
-    void shouldReturnAvailableCarsForSelectedPeriod() throws Exception {
+    void shouldReturnAvailableCarsForSelectedPeriod()
+            throws Exception {
+
         LocalDate startDate = LocalDate.of(2026, 11, 20);
         LocalDate endDate = LocalDate.of(2026, 11, 22);
 
@@ -279,7 +323,14 @@ class CarControllerTest {
                 .andExpect(jsonPath("$[0].brand").value("Toyota"))
                 .andExpect(jsonPath("$[0].model").value("Corolla"))
                 .andExpect(jsonPath("$[0].dailyPrice").value(199.99))
-                .andExpect(jsonPath("$[0].status").value("ACTIVE"));
+                .andExpect(jsonPath("$[0].status").value("ACTIVE"))
+                .andExpect(jsonPath("$[0].engineCapacityCm3").value(1798))
+                .andExpect(jsonPath("$[0].powerHp").value(140))
+                .andExpect(jsonPath("$[0].driveType").value("FWD"))
+                .andExpect(
+                        jsonPath("$[0].accelerationTo100Seconds")
+                                .value(9.2)
+                );
 
         verify(carService).getAvailableCars(
                 startDate,
@@ -360,6 +411,129 @@ class CarControllerTest {
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(carService);
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenTechnicalDataIsMissing()
+            throws Exception {
+
+        mockMvc.perform(
+                        post("/api/cars")
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_ADMIN")
+                                ))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                {
+                                  "brand": "Toyota",
+                                  "model": "Corolla",
+                                  "productionYear": 2024,
+                                  "registrationNumber": "BI12345",
+                                  "vin": "JTDBR32E720123456",
+                                  "fuelType": "GASOLINE",
+                                  "transmissionType": "AUTOMATIC",
+                                  "bodyType": "SEDAN",
+                                  "numberOfSeats": 5,
+                                  "category": "STANDARD",
+                                  "color": "Gray",
+                                  "dailyPrice": 199.99,
+                                  "description": "Samochód bez danych technicznych"
+                                }
+                                """)
+                )
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(carService);
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenUpdatingCarWithoutTechnicalData()
+            throws Exception {
+
+        Long carId = 1L;
+
+        mockMvc.perform(
+                        put("/api/cars/{id}", carId)
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_ADMIN")
+                                ))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                {
+                                  "brand": "Toyota",
+                                  "model": "Corolla",
+                                  "productionYear": 2024,
+                                  "registrationNumber": "BI12345",
+                                  "vin": "JTDBR32E720123456",
+                                  "fuelType": "GASOLINE",
+                                  "transmissionType": "AUTOMATIC",
+                                  "bodyType": "SEDAN",
+                                  "numberOfSeats": 5,
+                                  "category": "STANDARD",
+                                  "color": "Gray",
+                                  "dailyPrice": 199.99,
+                                  "description": "Samochód bez danych technicznych"
+                                }
+                                """)
+                )
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(carService);
+    }
+
+    @Test
+    void shouldUpdateCarAndReturnOkStatus() throws Exception {
+        Long carId = 1L;
+        CarResponse carResponse = createTestCarResponse();
+
+        when(carService.updateCar(
+                eq(carId),
+                any(UpdateCarRequest.class)
+        )).thenReturn(carResponse);
+
+        mockMvc.perform(
+                        put("/api/cars/{id}", carId)
+                                .with(jwt().authorities(
+                                        new SimpleGrantedAuthority("ROLE_ADMIN")
+                                ))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(validCreateCarJson())
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_JSON
+                ))
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.brand").value("Toyota"))
+                .andExpect(jsonPath("$.engineCapacityCm3").value(1798))
+                .andExpect(jsonPath("$.powerHp").value(140))
+                .andExpect(jsonPath("$.driveType").value("FWD"))
+                .andExpect(
+                        jsonPath("$.accelerationTo100Seconds")
+                                .value(9.2)
+                );
+
+        ArgumentCaptor<UpdateCarRequest> requestCaptor =
+                ArgumentCaptor.forClass(UpdateCarRequest.class);
+
+        verify(carService).updateCar(
+                eq(carId),
+                requestCaptor.capture()
+        );
+
+        UpdateCarRequest capturedRequest =
+                requestCaptor.getValue();
+
+        assertEquals(1798, capturedRequest.engineCapacityCm3());
+        assertEquals(140, capturedRequest.powerHp());
+        assertEquals(
+                CarDriveType.FWD,
+                capturedRequest.driveType()
+        );
+        assertEquals(
+                new BigDecimal("9.20"),
+                capturedRequest.accelerationTo100Seconds()
+        );
     }
 
 }

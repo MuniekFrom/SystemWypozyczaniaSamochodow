@@ -5,7 +5,7 @@ import pl.rafaldobkowski.carrental.car.model.CarBodyType;
 import pl.rafaldobkowski.carrental.car.model.CarCategory;
 import pl.rafaldobkowski.carrental.car.model.CarFuelType;
 import pl.rafaldobkowski.carrental.car.model.CarTransmissionType;
-
+import pl.rafaldobkowski.carrental.car.model.CarDriveType;
 import java.math.BigDecimal;
 
 public record UpdateCarRequest(
@@ -55,6 +55,22 @@ public record UpdateCarRequest(
         BigDecimal dailyPrice,
 
         @Size(max = 1000)
-        String description
+        String description,
+
+        @NotNull
+        @Positive
+        Integer engineCapacityCm3,
+
+        @NotNull
+        @Positive
+        Integer powerHp,
+
+        @NotNull
+        CarDriveType driveType,
+
+        @NotNull
+        @Positive
+        BigDecimal accelerationTo100Seconds
+
 ) {
 }

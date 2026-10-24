@@ -2,6 +2,7 @@ package pl.rafaldobkowski.carrental.car.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -66,7 +67,11 @@ class CarServiceTest {
                 CarCategory.STANDARD,
                 "Gray",
                 new BigDecimal("199.99"),
-                "Samochód testowy"
+                "Samochód testowy",
+                1798,
+                140,
+                CarDriveType.FWD,
+                new BigDecimal("9.20")
         );
     }
 
@@ -84,7 +89,11 @@ class CarServiceTest {
                 CarCategory.STANDARD,
                 "Black",
                 new BigDecimal("249.99"),
-                "Zaktualizowany samochód testowy"
+                "Zaktualizowany samochód testowy",
+                1987,
+                196,
+                CarDriveType.FWD,
+                new BigDecimal("7.50")
         );
     }
 
@@ -175,7 +184,6 @@ class CarServiceTest {
                 .save(any(Car.class));
     }
 
-
     @Test
     void shouldThrowCarAlreadyExistsExceptionWhenRegistrationNumberAlreadyExists() {
         CreateCarRequest request = createTestCreateCarRequest();
@@ -197,11 +205,11 @@ class CarServiceTest {
                 exception.getMessage()
         );
 
-        verify(carRepository).existsByRegistrationNumber(request.registrationNumber());
+        verify(carRepository)
+                .existsByRegistrationNumber(request.registrationNumber());
 
         verify(carRepository, never())
                 .save(any(Car.class));
-
     }
 
     @Test
@@ -232,7 +240,20 @@ class CarServiceTest {
         verify(carRepository)
                 .existsByRegistrationNumber(request.registrationNumber());
 
-        verify(carRepository).save(any(Car.class));
+        ArgumentCaptor<Car> carCaptor =
+                ArgumentCaptor.forClass(Car.class);
+
+        verify(carRepository).save(carCaptor.capture());
+
+        Car savedCar = carCaptor.getValue();
+
+        assertEquals(1798, savedCar.getEngineCapacityCm3());
+        assertEquals(140, savedCar.getPowerHp());
+        assertEquals(CarDriveType.FWD, savedCar.getDriveType());
+        assertEquals(
+                new BigDecimal("9.20"),
+                savedCar.getAccelerationTo100Seconds()
+        );
     }
 
     @Test
@@ -248,8 +269,9 @@ class CarServiceTest {
                 .thenReturn(false);
 
         when(carRepository.existsByRegistrationNumberAndIdNot(
-                request.registrationNumber(), carId))
-                .thenReturn(false);
+                request.registrationNumber(),
+                carId
+        )).thenReturn(false);
 
         CarResponse response = carService.updateCar(carId, request);
 
@@ -262,6 +284,14 @@ class CarServiceTest {
                 response.dailyPrice()
         );
 
+        assertEquals(1987, car.getEngineCapacityCm3());
+        assertEquals(196, car.getPowerHp());
+        assertEquals(CarDriveType.FWD, car.getDriveType());
+        assertEquals(
+                new BigDecimal("7.50"),
+                car.getAccelerationTo100Seconds()
+        );
+
         verify(carRepository).findById(carId);
 
         verify(carRepository)
@@ -269,7 +299,8 @@ class CarServiceTest {
 
         verify(carRepository)
                 .existsByRegistrationNumberAndIdNot(
-                        request.registrationNumber(), carId
+                        request.registrationNumber(),
+                        carId
                 );
     }
 
@@ -300,7 +331,10 @@ class CarServiceTest {
         assertEquals(1, result.size());
         assertEquals("Toyota", result.getFirst().brand());
         assertEquals("Corolla", result.getFirst().model());
-        assertEquals(CarStatus.ACTIVE, result.getFirst().status());
+        assertEquals(
+                CarStatus.ACTIVE,
+                result.getFirst().status()
+        );
 
         verify(carRepository).findAvailableCars(
                 startDate,
@@ -351,5 +385,4 @@ class CarServiceTest {
 
         verifyNoInteractions(carRepository);
     }
-
 }

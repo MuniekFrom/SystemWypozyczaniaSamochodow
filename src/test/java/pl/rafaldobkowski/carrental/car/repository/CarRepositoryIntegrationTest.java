@@ -20,7 +20,7 @@ import pl.rafaldobkowski.carrental.user.repository.UserRepository;
 import java.time.LocalDate;
 import java.util.List;
 import java.math.BigDecimal;
-
+import jakarta.persistence.EntityManager;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
@@ -43,6 +43,9 @@ class CarRepositoryIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     private Car createTestCar() {
         return createTestCar(
@@ -80,8 +83,6 @@ class CarRepositoryIntegrationTest {
                 () -> carRepository.saveAndFlush(secondCar)
         );
     }
-
-    // TODO: sprawdzić nazwę konkretnego ograniczenia bazy danych
 
     @Test
     void shouldRejectDuplicateRegistrationNumber() {
@@ -249,6 +250,39 @@ class CarRepositoryIntegrationTest {
                 );
 
         assertTrue(availableCars.isEmpty());
+    }
+
+    @Test
+    void shouldSaveAndReadCarTechnicalData() {
+        Car car = createTestCar(
+                "BI55555",
+                "JTDBR32E720555555"
+        );
+
+        car.updateTechnicalData(
+                1798,
+                140,
+                CarDriveType.FWD,
+                new BigDecimal("9.20")
+        );
+
+        Long carId = carRepository
+                .saveAndFlush(car)
+                .getId();
+
+        entityManager.clear();
+
+        Car savedCar = carRepository
+                .findById(carId)
+                .orElseThrow();
+
+        assertEquals(1798, savedCar.getEngineCapacityCm3());
+        assertEquals(140, savedCar.getPowerHp());
+        assertEquals(CarDriveType.FWD, savedCar.getDriveType());
+        assertEquals(
+                new BigDecimal("9.20"),
+                savedCar.getAccelerationTo100Seconds()
+        );
     }
 
 }

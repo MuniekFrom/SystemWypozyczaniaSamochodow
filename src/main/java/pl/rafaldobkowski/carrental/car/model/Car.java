@@ -31,9 +31,26 @@ public class Car {
     @Column(nullable = false, length = 30)
     private CarFuelType fuelType;
 
+    @Column(name = "engine_capacity_cm3")
+    private Integer engineCapacityCm3;
+
+    @Column(name = "power_hp")
+    private Integer powerHp;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private CarTransmissionType transmissionType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "drive_type", length = 30)
+    private CarDriveType driveType;
+
+    @Column(
+            name = "acceleration_to_100_seconds",
+            precision = 4,
+            scale = 2
+    )
+    private BigDecimal accelerationTo100Seconds;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
@@ -122,6 +139,22 @@ public class Car {
         return description;
     }
 
+    public Integer getEngineCapacityCm3() {
+        return engineCapacityCm3;
+    }
+
+    public Integer getPowerHp() {
+        return powerHp;
+    }
+
+    public CarDriveType getDriveType() {
+        return driveType;
+    }
+
+    public BigDecimal getAccelerationTo100Seconds() {
+        return accelerationTo100Seconds;
+    }
+
     public Car(String brand, String model, Integer productionYear, String registrationNumber, String vin, CarFuelType fuelType, CarTransmissionType transmissionType, CarBodyType bodyType, Integer numberOfSeats, CarCategory category, String color, BigDecimal dailyPrice, String description) {
         this.brand = brand;
         this.model = model;
@@ -167,6 +200,18 @@ public class Car {
         this.color = color;
         this.dailyPrice = dailyPrice;
         this.description = description;
+    }
+
+    public void updateTechnicalData(
+            Integer engineCapacityCm3,
+            Integer powerHp,
+            CarDriveType driveType,
+            BigDecimal accelerationTo100Seconds
+    ) {
+        this.engineCapacityCm3 = engineCapacityCm3;
+        this.powerHp = powerHp;
+        this.driveType = driveType;
+        this.accelerationTo100Seconds = accelerationTo100Seconds;
     }
 
     // Zmienia status samochodu
