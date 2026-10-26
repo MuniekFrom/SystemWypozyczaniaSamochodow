@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Pełna flota samochodów Car Rental.">
+    <title>Flota | Car Rental</title>
+
+    <link rel="preload" as="image" href="/images/hero/loading-page-car.webp">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/components/page-loader.css">
+    <link rel="stylesheet" href="/css/components/site-header.css">
+    <link rel="stylesheet" href="/css/components/car-card.css">
+    <link rel="stylesheet" href="/css/pages/fleet.css">
+    <script src="/js/core/theme-bootstrap.js"></script>
+
+    <link rel="stylesheet" href="/css/components/page-loader.css">
+    <link rel="stylesheet" href="/css/components/page-loader-theme.css">
+
+    <noscript>
+        <style>
+            #page-loader { display: none; }
+            body.is-loading { overflow: auto; }
+            body.is-loading .page-content {
+                visibility: visible;
+                opacity: 1;
+                transform: none;
+            }
+        </style>
+    </noscript>
+</head>
+
+<body class="is-loading">
+<div
+        id="page-loader"
+        class="page-loader"
+        data-loader-image="/images/hero/loading-page-car.webp"
+        style="--intro-scene-duration: 1300ms; --intro-exit-duration: 350ms;"
+        role="status"
+        aria-label="Ładowanie floty"
+>
+    <div class="page-loader__visual">
+        <img class="page-loader__car" src="/images/hero/loading-page-car.webp" alt="">
+        <span class="page-loader__light" aria-hidden="true"></span>
+    </div>
+    <p class="page-loader__text">Przygotowujemy samochody...</p>
+    <div class="page-loader__progress" aria-hidden="true"><span></span></div>
+</div>
+
+<div class="page-content">
+    <header id="site-header"></header>
+
+    <main>
+        <section class="fleet-header">
+            <div class="container">
+                <p class="fleet-header__eyebrow">Nasze samochody</p>
+                <h1>Flota Car Rental</h1>
+                <p>Porównaj parametry, cenę i wyposażenie dostępnych pojazdów.</p>
+            </div>
+        </section>
+
+        <section class="fleet-content">
+            <div class="container">
+                <form id="fleet-filters" class="fleet-filters">
+                    <div class="form-field">
+                        <label class="form-label" for="category-filter">Kategoria</label>
+                        <select id="category-filter" class="form-input">
+                            <option value="">Wszystkie</option>
+                            <option value="ECONOMY">Ekonomiczna</option>
+                            <option value="COMPACT">Kompakt</option>
+                            <option value="STANDARD">Standard</option>
+                            <option value="PREMIUM">Premium</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label" for="fuel-filter">Paliwo</label>
+                        <select id="fuel-filter" class="form-input">
+                            <option value="">Wszystkie</option>
+                            <option value="GASOLINE">Benzyna</option>
+                            <option value="DIESEL">Diesel</option>
+                            <option value="LPG">LPG</option>
+                            <option value="HYBRID">Hybryda</option>
+                            <option value="ELECTRIC">Elektryczny</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label" for="transmission-filter">Skrzynia</label>
+                        <select id="transmission-filter" class="form-input">
+                            <option value="">Wszystkie</option>
+                            <option value="AUTOMATIC">Automatyczna</option>
+                            <option value="MANUAL">Manualna</option>
+                            <option value="SEMI_AUTOMATIC">Półautomatyczna</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label" for="sort-filter">Sortowanie</label>
+                        <select id="sort-filter" class="form-input">
+                            <option value="default">Domyślne</option>
+                            <option value="price-asc">Cena: rosnąco</option>
+                            <option value="price-desc">Cena: malejąco</option>
+                            <option value="year-desc">Rok: od najnowszych</option>
+                            <option value="power-desc">Moc: od największej</option>
+                        </select>
+                    </div>
+
+                    <button id="clear-filters" class="button button--outline" type="button">
+                        Wyczyść filtry
+                    </button>
+                </form>
+
+                <p id="fleet-status" class="fleet-content__status" role="status">
+                    Ładowanie samochodów...
+                </p>
+
+                <div id="fleet-cars" class="car-card-grid"></div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script type="module" src="/js/pages/fleet.js"></script>
+</body>
+</html>

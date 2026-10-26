@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+            name="description"
+            content="Szczegóły samochodu i sprawdzanie dostępności wynajmu."
+    >
+
+    <title>Szczegóły samochodu | Car Rental</title>
+
+    <link
+            rel="preload"
+            as="image"
+            href="/images/hero/loading-page-car.webp"
+    >
+
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/components/page-loader.css">
+    <link rel="stylesheet" href="/css/pages/car-details.css">
+    <script src="/js/core/theme-bootstrap.js"></script>
+
+    <link rel="stylesheet" href="/css/components/page-loader.css">
+    <link rel="stylesheet" href="/css/components/page-loader-theme.css">
+    <noscript>
+        <style>
+            #page-loader {
+                display: none;
+            }
+
+            body.is-loading {
+                overflow: auto;
+            }
+
+            body.is-loading .page-content {
+                visibility: visible;
+                opacity: 1;
+                transform: none;
+            }
+        </style>
+    </noscript>
+</head>
+
+<body class="is-loading">
+
+<div
+        id="page-loader"
+        class="page-loader"
+        data-loader-image="/images/hero/loading-page-car.webp"
+        role="status"
+        aria-label="Ładowanie strony"
+>
+    <div class="page-loader__visual">
+        <img
+                class="page-loader__car"
+                src="/images/hero/loading-page-car.webp"
+                alt=""
+                width="1920"
+                height="1080"
+        >
+
+        <span
+                class="page-loader__light"
+                aria-hidden="true"
+        ></span>
+    </div>
+
+    <p class="page-loader__text">
+        Przygotowujemy samochody...
+    </p>
+
+    <div
+            class="page-loader__progress"
+            aria-hidden="true"
+    >
+        <span></span>
+    </div>
+</div>
+
+<div class="page-content">
+
+    <header class="site-header">
+        <div class="container site-header__content">
+
+            <a
+                    class="brand"
+                    href="/"
+                    aria-label="Car Rental – strona główna"
+            >
+                <img
+                        class="brand__logo"
+                        src="/images/logo/car-rental-logo-gold.webp"
+                        alt="Car Rental"
+                        width="2171"
+                        height="724"
+                >
+            </a>
+
+            <nav
+                    class="main-navigation"
+                    aria-label="Główna nawigacja"
+            >
+                <a
+                        class="main-navigation__link"
+                        href="/#cars"
+                >
+                    Flota
+                </a>
+
+                <a
+                        class="main-navigation__link"
+                        href="/#availability"
+                >
+                    Sprawdź dostępność
+                </a>
+
+                <a
+                        class="main-navigation__link"
+                        href="/#rental-terms"
+                >
+                    Warunki wynajmu
+                </a>
+            </nav>
+
+            <div class="site-header__actions">
+
+                <div class="theme-settings">
+
+                    <button
+                            id="settings-toggle"
+                            class="settings-toggle"
+                            type="button"
+                            aria-label="Ustawienia wyglądu"
+                            aria-expanded="false"
+                            aria-controls="theme-menu"
+                    >
+                        <svg
+                                aria-hidden="true"
+                                viewBox="0 0 24 24"
+                                width="20"
+                                height="20"
+                        >
+                            <path
+                                    d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                            />
+
+                            <path
+                                    d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.12 2.12-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1 1.55V20.3h-3v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06-2.12-2.12.06-.06A1.7 1.7 0 0 0 7.08 15a1.7 1.7 0 0 0-1.55-1H5.4v-3h.13a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.12-2.12.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1-1.55V4.7h3v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.12 2.12-.06.06A1.7 1.7 0 0 0 19.4 10a1.7 1.7 0 0 0 1.55 1h.13v3h-.13a1.7 1.7 0 0 0-1.55 1Z"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.5"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                            />
+                        </svg>
+                    </button>
+
+                    <div
+                            id="theme-menu"
+                            class="theme-menu"
+                            role="menu"
+                            hidden
+                    >
+                        <p
+                                class="theme-menu__title"
+                                role="presentation"
+                        >
+                            Wygląd strony
+                        </p>
+
+                        <button
+                                class="theme-option"
+                                type="button"
+                                data-theme-value="light"
+                                role="menuitemradio"
+                                aria-checked="false"
+                        >
+                            <span
+                                    class="theme-option__icon"
+                                    aria-hidden="true"
+                            >
+                                ☀
+                            </span>
+
+                            Tryb dzienny
+                        </button>
+
+                        <button
+                                class="theme-option"
+                                type="button"
+                                data-theme-value="dark"
+                                role="menuitemradio"
+                                aria-checked="false"
+                        >
+                            <span
+                                    class="theme-option__icon"
+                                    aria-hidden="true"
+                            >
+                                ☾
+                            </span>
+
+                            Tryb nocny
+                        </button>
+                    </div>
+
+                </div>
+
+                <a
+                        class="button button--outline"
+                        href="/html/login.html"
+                >
+                    Logowanie
+                </a>
+
+                <a
+                        class="button button--primary"
+                        href="/html/register.html"
+                >
+                    Rejestracja
+                </a>
+
+            </div>
+
+        </div>
+    </header>
+
+    <main class="car-details-page">
+
+        <div class="container">
+
+            <nav
+                    class="breadcrumbs"
+                    aria-label="Nawigacja okruszkowa"
+            >
+                <a href="/">Strona główna</a>
+                <span aria-hidden="true">/</span>
+                <a href="/#cars">Flota</a>
+                <span aria-hidden="true">/</span>
+                <span>Szczegóły samochodu</span>
+            </nav>
+
+            <section
+                    id="details-status"
+                    class="details-status card"
+                    role="status"
+                    aria-live="polite"
+            >
+                Ładowanie danych samochodu...
+            </section>
+
+            <div
+                    id="car-details-content"
+                    hidden
+            >
+                <section class="car-overview">
+
+                    <div class="car-gallery">
+
+                        <button
+                                id="gallery-open"
+                                class="car-gallery__main"
+                                type="button"
+                                aria-label="Powiększ zdjęcie samochodu"
+                        >
+                            <img
+                                    id="car-main-image"
+                                    class="car-gallery__main-image"
+                                    src=""
+                                    alt=""
+                                    hidden
+                            >
+
+                            <span
+                                    id="car-image-placeholder"
+                                    class="car-gallery__placeholder"
+                            >
+                                Brak zdjęcia samochodu
+                            </span>
+
+                            <span
+                                    class="car-gallery__zoom"
+                                    aria-hidden="true"
+                            >
+                                Powiększ zdjęcie
+                            </span>
+                        </button>
+
+                        <div
+                                id="car-thumbnails"
+                                class="car-gallery__thumbnails"
+                                aria-label="Pozostałe zdjęcia samochodu"
+                        ></div>
+
+                    </div>
+
+                    <div class="car-summary">
+
+                        <div class="car-summary__badges">
+                            <span
+                                    id="car-category"
+                                    class="car-summary__category"
+                            ></span>
+
+                            <span
+                                    id="car-status"
+                                    class="car-summary__status"
+                            ></span>
+                        </div>
+
+                        <h1
+                                id="car-name"
+                                class="car-summary__title"
+                        ></h1>
+
+                        <p
+                                id="car-subtitle"
+                                class="car-summary__subtitle"
+                        ></p>
+
+                        <p
+                                id="car-description"
+                                class="car-summary__description"
+                        ></p>
+
+                        <div class="car-summary__price">
+                            <span>od</span>
+
+                            <strong id="car-daily-price"></strong>
+
+                            <span>za dobę</span>
+                        </div>
+
+                        <div class="reservation-box">
+                            <h2>Sprawdź termin wynajmu</h2>
+
+                            <p>
+                                Wybierz datę odbioru oraz zwrotu.
+                            </p>
+
+                            <form
+                                    id="car-availability-form"
+                                    class="reservation-form"
+                            >
+                                <div class="form-field">
+                                    <label
+                                            class="form-label"
+                                            for="details-start-date"
+                                    >
+                                        Data odbioru
+                                    </label>
+
+                                    <input
+                                            id="details-start-date"
+                                            class="form-input"
+                                            name="startDate"
+                                            type="date"
+                                            required
+                                    >
+                                </div>
+
+                                <div class="form-field">
+                                    <label
+                                            class="form-label"
+                                            for="details-end-date"
+                                    >
+                                        Data zwrotu
+                                    </label>
+
+                                    <input
+                                            id="details-end-date"
+                                            class="form-input"
+                                            name="endDate"
+                                            type="date"
+                                            required
+                                    >
+                                </div>
+
+                                <button
+                                        id="availability-submit"
+                                        class="button button--primary"
+                                        type="submit"
+                                >
+                                    Sprawdź dostępność
+                                </button>
+                            </form>
+
+                            <div
+                                    id="price-summary"
+                                    class="price-summary"
+                                    hidden
+                            >
+                                <div>
+                                    <span>Liczba dni</span>
+                                    <strong id="rental-days"></strong>
+                                </div>
+
+                                <div>
+                                    <span>Łączna cena</span>
+                                    <strong id="rental-total-price"></strong>
+                                </div>
+                            </div>
+
+                            <p
+                                    id="availability-message"
+                                    class="details-message"
+                                    role="status"
+                                    aria-live="polite"
+                                    hidden
+                            ></p>
+
+                            <a
+                                    id="reservation-link"
+                                    class="button button--primary reservation-box__action"
+                                    href="/html/login.html"
+                                    hidden
+                            >
+                                Zaloguj się i zarezerwuj
+                            </a>
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <section
+                        class="technical-section"
+                        aria-labelledby="technical-title"
+                >
+                    <div class="technical-section__heading">
+                        <p>Dane pojazdu</p>
+
+                        <h2 id="technical-title">
+                            Specyfikacja techniczna
+                        </h2>
+                    </div>
+
+                    <dl
+                            id="car-specifications"
+                            class="technical-grid"
+                    ></dl>
+                </section>
+            </div>
+
+        </div>
+
+    </main>
+
+</div>
+
+<dialog
+        id="gallery-dialog"
+        class="gallery-dialog"
+        aria-label="Powiększone zdjęcie samochodu"
+>
+    <div class="gallery-dialog__content">
+
+        <button
+                id="gallery-close"
+                class="gallery-dialog__close"
+                type="button"
+                aria-label="Zamknij galerię"
+        >
+            <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+            >
+                <path d="M6 6L18 18M18 6L6 18"></path>
+            </svg>
+        </button>
+
+        <button
+                id="gallery-previous"
+                class="gallery-dialog__navigation gallery-dialog__navigation--previous"
+                type="button"
+                aria-label="Poprzednie zdjęcie"
+        >
+            <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+            >
+                <path d="M15 18L9 12L15 6"></path>
+            </svg>
+        </button>
+
+        <img
+                id="gallery-dialog-image"
+                class="gallery-dialog__image"
+                src=""
+                alt=""
+        >
+
+        <button
+                id="gallery-next"
+                class="gallery-dialog__navigation gallery-dialog__navigation--next"
+                type="button"
+                aria-label="Następne zdjęcie"
+        >
+            <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+            >
+                <path d="M9 6L15 12L9 18"></path>
+            </svg>
+        </button>
+
+        <p
+                id="gallery-counter"
+                class="gallery-dialog__counter"
+        ></p>
+
+    </div>
+</dialog>
+
+<script
+        type="module"
+        src="/js/pages/car-details.js"
+></script>
+
+</body>
+</html>

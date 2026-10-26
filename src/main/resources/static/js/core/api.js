@@ -22,9 +22,10 @@ export async function apiRequest(path, options = {}) {
     const contentType =
         response.headers.get("content-type") ?? "";
 
-    const responseBody = contentType.includes("application/json")
-        ? await response.json()
-        : await response.text();
+    const responseBody =
+        contentType.includes("application/json")
+            ? await response.json()
+            : await response.text();
 
     if (!response.ok) {
         const message =
@@ -39,6 +40,10 @@ export async function apiRequest(path, options = {}) {
 
 export function getCars() {
     return apiRequest("/cars");
+}
+
+export function getCarById(carId) {
+    return apiRequest(`/cars/${carId}`);
 }
 
 export function getAvailableCars(startDate, endDate) {

@@ -1,0 +1,202 @@
+.page-loader--headlights {
+    --intro-scene-duration: 4700ms;
+    --intro-exit-duration: 650ms;
+
+    display: block;
+    padding: 0;
+    overflow: hidden;
+    isolation: isolate;
+    background: #020304;
+}
+
+.headlight-intro__stage {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100vw, 150vh);
+    aspect-ratio: 3 / 2;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.headlight-intro__photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    filter: brightness(0.06) contrast(1.08);
+}
+
+.page-loader--headlights.is-playing .headlight-intro__photo {
+    animation: intro-photo-reveal 3600ms ease-out both;
+}
+
+.headlight-intro__flash {
+    position: absolute;
+    width: 10%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    opacity: 0;
+    background: radial-gradient(
+            circle,
+            rgba(255, 252, 231, 0.9) 0%,
+            rgba(255, 244, 194, 0.3) 20%,
+            rgba(210, 226, 240, 0.08) 50%,
+            transparent 72%
+    );
+    filter: blur(5px);
+}
+
+.headlight-intro__flash--left {
+    top: 38%;
+    left: 39%;
+}
+
+.headlight-intro__flash--right {
+    top: 39%;
+    left: 48%;
+}
+
+.page-loader--headlights.is-playing .headlight-intro__flash {
+    animation: intro-headlight 3300ms ease-in-out both;
+}
+
+.page-loader--headlights.is-playing .headlight-intro__flash--right {
+    animation-delay: 130ms;
+}
+
+.headlight-intro__vignette {
+    position: absolute;
+    inset: 0;
+    background:
+            linear-gradient(0deg, rgba(0, 0, 0, 0.9), transparent 55%),
+            radial-gradient(ellipse at center, transparent 30%, rgba(0, 0, 0, 0.58));
+    pointer-events: none;
+}
+
+.headlight-intro__content {
+    position: absolute;
+    bottom: max(10%, 64px);
+    left: 50%;
+    width: min(1100px, calc(100% - 40px));
+    color: #f6f7f9;
+    text-align: center;
+    transform: translateX(-50%);
+}
+
+.headlight-intro__eyebrow,
+.headlight-intro__title,
+.headlight-intro__subtitle,
+.headlight-intro__line,
+.headlight-intro__skip {
+    opacity: 0;
+}
+
+.page-loader--headlights.is-playing .headlight-intro__eyebrow {
+    animation: intro-copy 500ms ease 3200ms both;
+}
+
+.page-loader--headlights.is-playing .headlight-intro__title {
+    animation: intro-copy 650ms cubic-bezier(.2, .7, .2, 1) 3380ms both;
+}
+
+.page-loader--headlights.is-playing .headlight-intro__subtitle {
+    animation: intro-copy 500ms ease 3600ms both;
+}
+
+.page-loader--headlights.is-playing .headlight-intro__line {
+    animation: intro-line 600ms ease 3780ms both;
+}
+
+.page-loader--headlights.is-playing .headlight-intro__skip {
+    animation: intro-opacity 350ms ease 1000ms both;
+}
+
+.headlight-intro__eyebrow {
+    display: block;
+    margin-bottom: 14px;
+    color: #c4ccd6;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.42em;
+    text-transform: uppercase;
+}
+
+.headlight-intro__title {
+    margin: 0;
+    font-size: clamp(1.8rem, 4.6vw, 4rem);
+    font-weight: 600;
+    line-height: 1.12;
+    letter-spacing: -0.045em;
+    text-shadow: 0 6px 30px rgba(0, 0, 0, 0.6);
+}
+
+.headlight-intro__subtitle {
+    margin: 16px 0 0;
+    color: #aeb7c3;
+    font-size: clamp(0.82rem, 1.5vw, 1rem);
+    letter-spacing: 0.06em;
+}
+
+.headlight-intro__line {
+    display: block;
+    width: 64px;
+    height: 1px;
+    margin: 25px auto 0;
+    background: linear-gradient(90deg, transparent, #dce8f4, transparent);
+}
+
+.headlight-intro__skip {
+    position: absolute;
+    right: 24px;
+    bottom: 20px;
+    min-height: 44px;
+    padding: 8px 12px;
+    color: #b8c0cb;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+}
+
+@keyframes intro-photo-reveal {
+    0%, 15% { opacity: 0; filter: brightness(0.03) contrast(1.08); }
+    34% { opacity: 0.3; filter: brightness(0.12) contrast(1.08); }
+    48% { opacity: 0.12; filter: brightness(0.06) contrast(1.08); }
+    68% { opacity: 0.42; filter: brightness(0.18) contrast(1.08); }
+    100% { opacity: 1; filter: brightness(0.72) contrast(1.04); }
+}
+
+@keyframes intro-headlight {
+    0%, 18% { opacity: 0; transform: scale(0.72); }
+    34% { opacity: 0.45; }
+    48% { opacity: 0.06; }
+    66% { opacity: 0.35; }
+    86%, 100% { opacity: 1; transform: scale(1.15); }
+}
+
+@keyframes intro-copy {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes intro-line {
+    from { opacity: 0; transform: scaleX(0); }
+    to { opacity: 1; transform: scaleX(1); }
+}
+
+@keyframes intro-opacity {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .headlight-intro__photo,
+    .headlight-intro__flash,
+    .headlight-intro__eyebrow,
+    .headlight-intro__title,
+    .headlight-intro__subtitle,
+    .headlight-intro__line,
+    .headlight-intro__skip {
+        animation: none !important;
+    }
+}

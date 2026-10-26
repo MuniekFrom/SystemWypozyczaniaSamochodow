@@ -1,0 +1,13 @@
+.main-navigation__link.is-active {
+    color: var(--color-primary);
+}
+
+.main-navigation__link.is-active::after {
+    transform: scaleX(1);
+}
+
+@media (max-width: 640px) {
+    .site-header__actions {
+        flex-wrap: wrap;
+    }
+}

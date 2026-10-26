@@ -1,0 +1,130 @@
+.terms-header {
+    padding-block: clamp(58px, 8vw, 100px);
+    color: #f8f5ec;
+    background:
+            radial-gradient(circle at 82% 18%, rgba(183, 149, 82, 0.18), transparent 28%),
+            #101011;
+    border-bottom: 1px solid #302a20;
+}
+
+.terms-header__content > p {
+    margin-bottom: 12px;
+    color: var(--color-primary);
+    font-size: 0.76rem;
+    font-weight: 850;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.terms-header h1 {
+    margin-bottom: 18px;
+    font-size: clamp(2.6rem, 5.5vw, 5rem);
+    letter-spacing: -0.055em;
+}
+
+.terms-header__content > span {
+    display: block;
+    max-width: 690px;
+    color: #bdb7ad;
+    font-size: 1.05rem;
+}
+
+.terms-content {
+    padding-block: clamp(52px, 8vw, 96px);
+}
+
+.terms-content__layout {
+    display: grid;
+    grid-template-columns: minmax(250px, 0.65fr) minmax(0, 1.35fr);
+    align-items: start;
+    gap: clamp(28px, 6vw, 76px);
+}
+
+.terms-summary {
+    position: sticky;
+    top: 116px;
+    padding: 28px;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-top: 3px solid var(--color-primary);
+    border-radius: var(--radius-medium);
+    box-shadow: var(--shadow-small);
+}
+
+.terms-summary > span {
+    color: var(--color-primary);
+    font-size: 0.74rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.terms-summary h2 {
+    margin: 12px 0 16px;
+    font-size: 1.7rem;
+}
+
+.terms-summary p {
+    margin-bottom: 24px;
+    color: var(--color-text-muted);
+}
+
+.terms-list {
+    display: grid;
+    gap: 14px;
+}
+
+.rental-term {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+    box-shadow: var(--shadow-small);
+}
+
+.rental-term[open] {
+    border-color: var(--color-primary);
+}
+
+.rental-term summary {
+    padding: 22px 54px 22px 24px;
+    position: relative;
+    cursor: pointer;
+    font-size: 1.06rem;
+    font-weight: 800;
+    list-style: none;
+}
+
+.rental-term summary::-webkit-details-marker {
+    display: none;
+}
+
+.rental-term summary::after {
+    content: "+";
+    position: absolute;
+    top: 50%;
+    right: 22px;
+    color: var(--color-primary);
+    font-size: 1.5rem;
+    line-height: 1;
+    transform: translateY(-50%);
+}
+
+.rental-term[open] summary::after {
+    content: "−";
+}
+
+.rental-term p {
+    margin: 0;
+    padding: 0 24px 24px;
+    color: var(--color-text-muted);
+}
+
+@media (max-width: 800px) {
+    .terms-content__layout {
+        grid-template-columns: 1fr;
+    }
+
+    .terms-summary {
+        position: static;
+    }
+}

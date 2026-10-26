@@ -1,0 +1,94 @@
+.availability-header {
+    padding-block: clamp(54px, 7vw, 90px);
+    background:
+            radial-gradient(circle at 12% 15%, rgba(183, 149, 82, 0.16), transparent 30%),
+            var(--color-surface-secondary);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.availability-header__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
+    align-items: center;
+    gap: clamp(34px, 7vw, 90px);
+}
+
+.availability-header__eyebrow,
+.availability-results__heading p {
+    margin-bottom: 12px;
+    color: var(--color-primary);
+    font-size: 0.76rem;
+    font-weight: 850;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.availability-header h1 {
+    margin-bottom: 18px;
+    font-size: clamp(2.5rem, 5vw, 4.7rem);
+    letter-spacing: -0.055em;
+}
+
+.availability-header__layout > div > p:last-child {
+    max-width: 610px;
+    margin-bottom: 0;
+    color: var(--color-text-muted);
+    font-size: 1.05rem;
+}
+
+.availability-search {
+    padding: 28px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    border-top: 3px solid var(--color-primary);
+}
+
+.availability-search .button {
+    grid-column: 1 / -1;
+}
+
+.availability-search .button:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+.availability-results {
+    min-height: 440px;
+    padding-block: clamp(58px, 8vw, 96px);
+}
+
+.availability-results__heading {
+    margin-bottom: 24px;
+}
+
+.availability-results__heading h2 {
+    margin-bottom: 0;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    letter-spacing: -0.045em;
+}
+
+.availability-results__status {
+    margin-bottom: 24px;
+    color: var(--color-text-muted);
+}
+
+.availability-results__status--error {
+    color: var(--color-danger);
+}
+
+@media (max-width: 850px) {
+    .availability-header__layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 540px) {
+    .availability-search {
+        grid-template-columns: 1fr;
+    }
+
+    .availability-search .button {
+        grid-column: auto;
+    }
+}

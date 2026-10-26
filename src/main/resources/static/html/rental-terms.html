@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Warunki wynajmu samochodów Car Rental.">
+    <title>Warunki wynajmu | Car Rental</title>
+
+    <link rel="preload" as="image" href="/images/hero/loading-page-car.webp">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/components/page-loader.css">
+    <link rel="stylesheet" href="/css/components/site-header.css">
+    <link rel="stylesheet" href="/css/pages/rental-terms.css">
+    <script src="/js/core/theme-bootstrap.js"></script>
+
+    <link rel="stylesheet" href="/css/components/page-loader.css">
+    <link rel="stylesheet" href="/css/components/page-loader-theme.css">
+    <noscript>
+        <style>
+            #page-loader { display: none; }
+            body.is-loading { overflow: auto; }
+            body.is-loading .page-content {
+                visibility: visible;
+                opacity: 1;
+                transform: none;
+            }
+        </style>
+    </noscript>
+</head>
+
+<body class="is-loading">
+<div
+        id="page-loader"
+        class="page-loader"
+        data-loader-image="/images/hero/loading-page-car.webp"
+        style="--intro-scene-duration: 1300ms; --intro-exit-duration: 350ms;"
+        role="status"
+        aria-label="Ładowanie warunków wynajmu"
+>
+    <div class="page-loader__visual">
+        <img class="page-loader__car" src="/images/hero/loading-page-car.webp" alt="">
+        <span class="page-loader__light" aria-hidden="true"></span>
+    </div>
+    <p class="page-loader__text">Przygotowujemy samochody...</p>
+    <div class="page-loader__progress" aria-hidden="true"><span></span></div>
+</div>
+
+<div class="page-content">
+    <header id="site-header"></header>
+
+    <main>
+        <section class="terms-header">
+            <div class="container terms-header__content">
+                <p>Przed rezerwacją</p>
+                <h1>Warunki wynajmu</h1>
+                <span>
+                    Najważniejsze zasady dotyczące dostępności, ceny,
+                    rezerwacji oraz obsługi wypożyczenia.
+                </span>
+            </div>
+        </section>
+
+        <section class="terms-content">
+            <div class="container terms-content__layout">
+                <aside class="terms-summary">
+                    <span>Car Rental</span>
+                    <h2>Najważniejsze informacje</h2>
+                    <p>
+                        System automatycznie sprawdza kolizje terminów
+                        i oblicza koszt na podstawie ceny za dobę.
+                    </p>
+                    <a class="button button--primary" href="/html/availability.html">
+                        Sprawdź dostępność
+                    </a>
+                </aside>
+
+                <div class="terms-list">
+                    <details class="rental-term" open>
+                        <summary>Termin i dostępność samochodu</summary>
+                        <p>
+                            Data zwrotu musi przypadać po dacie odbioru.
+                            Samochodu nie można zarezerwować, jeżeli istnieje
+                            aktywna rezerwacja nachodząca na wybrany okres.
+                        </p>
+                    </details>
+
+                    <details class="rental-term">
+                        <summary>Obliczanie ceny wynajmu</summary>
+                        <p>
+                            Całkowity koszt jest obliczany na podstawie liczby
+                            dni wypożyczenia i aktualnej ceny samochodu za dobę.
+                        </p>
+                    </details>
+
+                    <details class="rental-term">
+                        <summary>Utworzenie i potwierdzenie rezerwacji</summary>
+                        <p>
+                            Rezerwację tworzy zalogowany klient. Nowa rezerwacja
+                            otrzymuje status oczekujący, a pracownik lub administrator
+                            może ją następnie potwierdzić.
+                        </p>
+                    </details>
+
+                    <details class="rental-term">
+                        <summary>Odbiór i rozpoczęcie wypożyczenia</summary>
+                        <p>
+                            Potwierdzona rezerwacja może zostać rozpoczęta przez
+                            pracownika podczas wydania pojazdu klientowi.
+                        </p>
+                    </details>
+
+                    <details class="rental-term">
+                        <summary>Zwrot samochodu</summary>
+                        <p>
+                            Po zwrocie pracownik kończy wypożyczenie, zmieniając
+                            status rezerwacji na zakończony.
+                        </p>
+                    </details>
+
+                    <details class="rental-term">
+                        <summary>Anulowanie rezerwacji</summary>
+                        <p>
+                            Klient może anulować swoją rezerwację tylko wtedy,
+                            gdy pozwala na to jej aktualny status. Zakończonego
+                            wypożyczenia nie można anulować.
+                        </p>
+                    </details>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script type="module" src="/js/pages/rental-terms.js"></script>
+</body>
+</html>

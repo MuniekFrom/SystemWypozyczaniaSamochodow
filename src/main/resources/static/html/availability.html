@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sprawdź dostępność samochodów w wybranym terminie.">
+    <title>Sprawdź dostępność | Car Rental</title>
+
+    <link rel="preload" as="image" href="/images/hero/loading-page-car.webp">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/components/page-loader.css">
+    <link rel="stylesheet" href="/css/components/site-header.css">
+    <link rel="stylesheet" href="/css/components/car-card.css">
+    <link rel="stylesheet" href="/css/pages/availability.css">
+    <script src="/js/core/theme-bootstrap.js"></script>
+
+    <link rel="stylesheet" href="/css/components/page-loader.css">
+    <link rel="stylesheet" href="/css/components/page-loader-theme.css">
+
+    <noscript>
+        <style>
+            #page-loader { display: none; }
+            body.is-loading { overflow: auto; }
+            body.is-loading .page-content {
+                visibility: visible;
+                opacity: 1;
+                transform: none;
+            }
+        </style>
+    </noscript>
+</head>
+
+<body class="is-loading">
+<div
+        id="page-loader"
+        class="page-loader"
+        data-loader-image="/images/hero/loading-page-car.webp"
+        style="--intro-scene-duration: 1300ms; --intro-exit-duration: 350ms;"
+        role="status"
+        aria-label="Ładowanie wyszukiwarki"
+>
+    <div class="page-loader__visual">
+        <img class="page-loader__car" src="/images/hero/loading-page-car.webp" alt="">
+        <span class="page-loader__light" aria-hidden="true"></span>
+    </div>
+    <p class="page-loader__text">Przygotowujemy samochody...</p>
+    <div class="page-loader__progress" aria-hidden="true"><span></span></div>
+</div>
+
+<div class="page-content">
+    <header id="site-header"></header>
+
+    <main>
+        <section class="availability-header">
+            <div class="container availability-header__layout">
+                <div>
+                    <p class="availability-header__eyebrow">Wyszukiwarka</p>
+                    <h1>Znajdź dostępny samochód</h1>
+                    <p>
+                        Wybierz termin, a system odrzuci pojazdy mające
+                        kolidującą rezerwację.
+                    </p>
+                </div>
+
+                <form id="availability-form" class="availability-search card">
+                    <div class="form-field">
+                        <label class="form-label" for="start-date">Data odbioru</label>
+                        <input id="start-date" class="form-input" type="date" required>
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label" for="end-date">Data zwrotu</label>
+                        <input id="end-date" class="form-input" type="date" required>
+                    </div>
+
+                    <button id="availability-submit" class="button button--primary" type="submit">
+                        Szukaj samochodów
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <section class="availability-results" aria-labelledby="results-title">
+            <div class="container">
+                <div class="availability-results__heading">
+                    <div>
+                        <p>Wyniki wyszukiwania</p>
+                        <h2 id="results-title">Dostępne samochody</h2>
+                    </div>
+                </div>
+
+                <p id="availability-status" class="availability-results__status" role="status">
+                    Wybierz datę odbioru i zwrotu.
+                </p>
+
+                <div id="available-cars" class="car-card-grid"></div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script type="module" src="/js/pages/availability.js"></script>
+</body>
+</html>

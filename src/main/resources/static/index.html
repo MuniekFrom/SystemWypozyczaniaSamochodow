@@ -2,40 +2,31 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-
-    <meta
-            name="viewport"
-            content="width=device-width, initial-scale=1.0"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta
             name="description"
-            content="Wypożyczalnia samochodów – wyszukaj dostępny pojazd i utwórz rezerwację online."
+            content="Wypożyczalnia samochodów – przeglądaj flotę i sprawdzaj dostępność pojazdów."
     >
 
     <title>Car Rental</title>
 
-    <link
-            rel="preload"
-            as="image"
-            href="/images/hero/lighting-car.webp"
-    >
-
+    <link rel="preload" as="image" href="/images/hero/lighting-car.webp">
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/components.css">
     <link rel="stylesheet" href="/css/components/page-loader.css">
+    <link rel="stylesheet" href="/css/components/site-header.css">
+    <link rel="stylesheet" href="/css/components/car-card.css">
+    <link rel="stylesheet" href="/css/components/home-intro.css">
     <link rel="stylesheet" href="/css/pages/home.css">
+    <script src="/js/core/theme-bootstrap.js"></script>
+
+    <link rel="stylesheet" href="/css/components/page-loader.css">
+    <link rel="stylesheet" href="/css/components/page-loader-theme.css">
 
     <noscript>
         <style>
-            #page-loader {
-                display: none;
-            }
-
-            body.is-loading {
-                overflow: auto;
-            }
-
+            #page-loader { display: none; }
+            body.is-loading { overflow: auto; }
             body.is-loading .page-content {
                 visibility: visible;
                 opacity: 1;
@@ -54,194 +45,25 @@
         role="status"
         aria-label="Wypożyczalnia samochodów"
 >
-    <div
-            class="headlight-intro__stage"
-            aria-hidden="true"
-    >
-        <div class="headlight-intro__body-layer">
-            <svg
-                    class="headlight-intro__scene"
-                    viewBox="0 0 1920 1280"
-                    xmlns="http://www.w3.org/2000/svg"
-            >
-                <defs>
-                    <radialGradient id="intro-body-cutout">
-                        <stop offset="0" stop-color="black"/>
-                        <stop offset=".82" stop-color="black"/>
-                        <stop offset="1" stop-color="white"/>
-                    </radialGradient>
-
-                    <mask
-                            id="intro-car-body"
-                            maskUnits="userSpaceOnUse"
-                            x="0"
-                            y="0"
-                            width="1920"
-                            height="1280"
-                            style="mask-type: luminance"
-                    >
-                        <rect
-                                width="1920"
-                                height="1280"
-                                fill="white"
-                        />
-
-                        <g fill="url(#intro-body-cutout)">
-                            <ellipse
-                                    cx="828"
-                                    cy="573"
-                                    rx="71"
-                                    ry="77"
-                                    transform="rotate(-14 828 573)"
-                            />
-
-                            <ellipse
-                                    cx="1007"
-                                    cy="590"
-                                    rx="77"
-                                    ry="78"
-                                    transform="rotate(-14 1007 590)"
-                            />
-                        </g>
-                    </mask>
-                </defs>
-
-                <image
-                        href="/images/hero/lighting-car.webp"
-                        width="1920"
-                        height="1280"
-                        mask="url(#intro-car-body)"
-                />
-            </svg>
-        </div>
-
-        <div class="headlight-intro__lamp headlight-intro__lamp--left">
-            <svg
-                    class="headlight-intro__lamp-photo"
-                    viewBox="744 482 170 180"
-                    xmlns="http://www.w3.org/2000/svg"
-            >
-                <defs>
-                    <radialGradient id="intro-left-feather">
-                        <stop offset="0" stop-color="white"/>
-                        <stop offset=".82" stop-color="white"/>
-                        <stop offset="1" stop-color="black"/>
-                    </radialGradient>
-
-                    <mask
-                            id="intro-left-lamp"
-                            maskUnits="userSpaceOnUse"
-                            x="744"
-                            y="482"
-                            width="170"
-                            height="180"
-                            style="mask-type: luminance"
-                    >
-                        <rect
-                                x="744"
-                                y="482"
-                                width="170"
-                                height="180"
-                                fill="black"
-                        />
-
-                        <ellipse
-                                cx="828"
-                                cy="573"
-                                rx="71"
-                                ry="77"
-                                transform="rotate(-14 828 573)"
-                                fill="url(#intro-left-feather)"
-                        />
-                    </mask>
-                </defs>
-
-                <image
-                        href="/images/hero/lighting-car.webp"
-                        width="1920"
-                        height="1280"
-                        mask="url(#intro-left-lamp)"
-                />
-            </svg>
-
-            <span class="headlight-intro__bloom"></span>
-        </div>
-
-        <div class="headlight-intro__lamp headlight-intro__lamp--right">
-            <svg
-                    class="headlight-intro__lamp-photo"
-                    viewBox="916 500 182 180"
-                    xmlns="http://www.w3.org/2000/svg"
-            >
-                <defs>
-                    <radialGradient id="intro-right-feather">
-                        <stop offset="0" stop-color="white"/>
-                        <stop offset=".82" stop-color="white"/>
-                        <stop offset="1" stop-color="black"/>
-                    </radialGradient>
-
-                    <mask
-                            id="intro-right-lamp"
-                            maskUnits="userSpaceOnUse"
-                            x="916"
-                            y="500"
-                            width="182"
-                            height="180"
-                            style="mask-type: luminance"
-                    >
-                        <rect
-                                x="916"
-                                y="500"
-                                width="182"
-                                height="180"
-                                fill="black"
-                        />
-
-                        <ellipse
-                                cx="1007"
-                                cy="590"
-                                rx="77"
-                                ry="78"
-                                transform="rotate(-14 1007 590)"
-                                fill="url(#intro-right-feather)"
-                        />
-                    </mask>
-                </defs>
-
-                <image
-                        href="/images/hero/lighting-car.webp"
-                        width="1920"
-                        height="1280"
-                        mask="url(#intro-right-lamp)"
-                />
-            </svg>
-
-            <span class="headlight-intro__bloom"></span>
-        </div>
+    <div class="headlight-intro__stage" aria-hidden="true">
+        <img
+                class="headlight-intro__photo"
+                src="/images/hero/lighting-car.webp"
+                alt=""
+                width="1920"
+                height="1280"
+        >
+        <span class="headlight-intro__flash headlight-intro__flash--left"></span>
+        <span class="headlight-intro__flash headlight-intro__flash--right"></span>
     </div>
 
-    <div
-            class="headlight-intro__vignette"
-            aria-hidden="true"
-    ></div>
+    <div class="headlight-intro__vignette" aria-hidden="true"></div>
 
     <div class="headlight-intro__content">
-        <span class="headlight-intro__eyebrow">
-            Car Rental
-        </span>
-
-        <h1 class="headlight-intro__title">
-            Wypożyczalnia samochodów
-        </h1>
-
-        <p class="headlight-intro__subtitle">
-            Twoja podróż zaczyna się tutaj
-        </p>
-
-        <span
-                class="headlight-intro__line"
-                aria-hidden="true"
-        ></span>
+        <span class="headlight-intro__eyebrow">Car Rental</span>
+        <h1 class="headlight-intro__title">Wypożyczalnia samochodów</h1>
+        <p class="headlight-intro__subtitle">Twoja podróż zaczyna się tutaj</p>
+        <span class="headlight-intro__line" aria-hidden="true"></span>
     </div>
 
     <button
@@ -249,386 +71,109 @@
             type="button"
             aria-label="Pomiń animację wprowadzającą"
     >
-        Pomiń intro
-        <span aria-hidden="true">→</span>
+        Pomiń intro →
     </button>
 </div>
 
 <div class="page-content">
+    <header id="site-header"></header>
 
-    <header class="site-header">
-        <div class="container site-header__content">
+    <main>
+        <section class="home-hero">
+            <div class="container home-hero__layout">
+                <div class="home-hero__content">
+                    <p class="home-hero__eyebrow">Wypożyczalnia samochodów</p>
 
-            <a
-                    class="brand"
-                    href="/"
-                    aria-label="Car Rental – strona główna"
-            >
-                <img
-                        class="brand__logo"
-                        src="/images/logo/car-rental-logo-gold.webp"
-                        alt="Car Rental"
-                        width="2171"
-                        height="724"
-                >
-            </a>
+                    <h1>Samochód dopasowany do każdej podróży</h1>
 
-            <nav
-                    class="main-navigation"
-                    aria-label="Główna nawigacja"
-            >
-                <a
-                        class="main-navigation__link"
-                        href="#cars"
-                >
-                    Flota
-                </a>
-
-                <a
-                        class="main-navigation__link"
-                        href="#availability"
-                >
-                    Sprawdź dostępność
-                </a>
-
-                <a
-                        class="main-navigation__link"
-                        href="#rental-terms"
-                >
-                    Warunki wynajmu
-                </a>
-            </nav>
-
-            <div class="site-header__actions">
-
-                <div class="theme-settings">
-
-                    <button
-                            id="settings-toggle"
-                            class="settings-toggle"
-                            type="button"
-                            aria-label="Ustawienia wyglądu"
-                            aria-expanded="false"
-                            aria-controls="theme-menu"
-                    >
-                        <svg
-                                aria-hidden="true"
-                                viewBox="0 0 24 24"
-                                width="20"
-                                height="20"
-                        >
-                            <path
-                                    d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="1.8"
-                            />
-
-                            <path
-                                    d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.12 2.12-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1 1.55V20.3h-3v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06-2.12-2.12.06-.06A1.7 1.7 0 0 0 7.08 15a1.7 1.7 0 0 0-1.55-1H5.4v-3h.13a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.12-2.12.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1-1.55V4.7h3v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.12 2.12-.06.06A1.7 1.7 0 0 0 19.4 10a1.7 1.7 0 0 0 1.55 1h.13v3h-.13a1.7 1.7 0 0 0-1.55 1Z"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="1.5"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                            />
-                        </svg>
-                    </button>
-
-                    <div
-                            id="theme-menu"
-                            class="theme-menu"
-                            role="menu"
-                            hidden
-                    >
-                        <p
-                                class="theme-menu__title"
-                                role="presentation"
-                        >
-                            Wygląd strony
-                        </p>
-
-                        <button
-                                class="theme-option"
-                                type="button"
-                                data-theme-value="light"
-                                role="menuitemradio"
-                                aria-checked="false"
-                        >
-                            <span
-                                    class="theme-option__icon"
-                                    aria-hidden="true"
-                            >
-                                ☀
-                            </span>
-
-                            Tryb dzienny
-                        </button>
-
-                        <button
-                                class="theme-option"
-                                type="button"
-                                data-theme-value="dark"
-                                role="menuitemradio"
-                                aria-checked="false"
-                        >
-                            <span
-                                    class="theme-option__icon"
-                                    aria-hidden="true"
-                            >
-                                ☾
-                            </span>
-
-                            Tryb nocny
-                        </button>
-                    </div>
-
-                </div>
-
-                <a
-                        class="button button--outline"
-                        href="/html/login.html"
-                >
-                    Logowanie
-                </a>
-
-                <a
-                        class="button button--primary"
-                        href="/html/register.html"
-                >
-                    Rejestracja
-                </a>
-
-            </div>
-
-        </div>
-    </header>
-
-    <main id="main-content">
-
-        <section
-                class="hero"
-                aria-labelledby="hero-title"
-        >
-            <div class="container hero__layout">
-
-                <div class="hero__content">
-                    <p class="hero__eyebrow">
-                        Wypożyczalnia samochodów
+                    <p>
+                        Porównaj pojazdy, sprawdź ich dostępność w wybranym
+                        terminie i przygotuj rezerwację przez internet.
                     </p>
 
-                    <h1
-                            id="hero-title"
-                            class="hero__title"
-                    >
-                        Wybierz samochód na swoją podróż
-                    </h1>
-
-                    <p class="hero__description">
-                        Sprawdź dostępność pojazdów w wybranym terminie
-                        i zarezerwuj samochód przez internet.
-                    </p>
-
-                    <div class="hero__actions">
-                        <a
-                                class="button button--primary"
-                                href="#availability"
-                        >
+                    <div class="home-hero__actions">
+                        <a class="button button--primary" href="/html/availability.html">
                             Sprawdź dostępność
+                        </a>
+
+                        <a class="button button--outline" href="/html/fleet.html">
+                            Zobacz flotę
                         </a>
                     </div>
                 </div>
 
-                <div
-                        id="availability"
-                        class="hero__search card"
-                >
-                    <h2>Znajdź dostępny samochód</h2>
+                <aside class="home-hero__panel">
+                    <span class="home-hero__panel-number">01</span>
+                    <p>Wybierz termin</p>
+                    <span class="home-hero__panel-divider"></span>
 
-                    <p>
-                        Podaj planowany termin wypożyczenia.
-                    </p>
+                    <span class="home-hero__panel-number">02</span>
+                    <p>Porównaj dostępne samochody</p>
+                    <span class="home-hero__panel-divider"></span>
 
-                    <form
-                            id="availability-form"
-                            class="availability-form"
-                    >
-                        <div class="form-field">
-                            <label
-                                    class="form-label"
-                                    for="start-date"
-                            >
-                                Data odbioru
-                            </label>
-
-                            <input
-                                    class="form-input"
-                                    id="start-date"
-                                    name="startDate"
-                                    type="date"
-                                    required
-                            >
-                        </div>
-
-                        <div class="form-field">
-                            <label
-                                    class="form-label"
-                                    for="end-date"
-                            >
-                                Data zwrotu
-                            </label>
-
-                            <input
-                                    class="form-input"
-                                    id="end-date"
-                                    name="endDate"
-                                    type="date"
-                                    required
-                            >
-                        </div>
-
-                        <button
-                                class="button button--primary"
-                                type="submit"
-                        >
-                            Szukaj samochodów
-                        </button>
-                    </form>
-                </div>
-
+                    <span class="home-hero__panel-number">03</span>
+                    <p>Zaloguj się i utwórz rezerwację</p>
+                </aside>
             </div>
         </section>
 
-        <section
-                id="cars"
-                class="fleet"
-                aria-labelledby="fleet-title"
-        >
+        <section id="cars" class="home-featured" aria-labelledby="featured-title">
             <div class="container">
+                <div class="home-section-heading">
+                    <div>
+                        <p>Wybrane pojazdy</p>
+                        <h2 id="featured-title">Poznaj naszą flotę</h2>
+                    </div>
 
-                <div class="section-heading">
-                    <p class="section-heading__eyebrow">
-                        Dostępne pojazdy
-                    </p>
-
-                    <h2
-                            id="fleet-title"
-                            class="section-heading__title"
-                    >
-                        Nasza flota
-                    </h2>
-
-                    <p class="section-heading__description">
-                        Wybierz samochód dopasowany do swojej podróży.
-                        Dostępność pojazdów możesz sprawdzić dla konkretnego terminu.
-                    </p>
+                    <a class="home-section-heading__link" href="/html/fleet.html">
+                        Wszystkie samochody →
+                    </a>
                 </div>
 
-                <p
-                        id="cars-status"
-                        class="fleet__status"
-                        role="status"
-                        aria-live="polite"
-                >
+                <p id="featured-status" class="home-featured__status" role="status">
                     Ładowanie samochodów...
                 </p>
 
-                <div
-                        id="cars-list"
-                        class="fleet__grid"
-                ></div>
-
+                <div id="featured-cars" class="car-card-grid"></div>
             </div>
         </section>
 
-        <section
-                id="rental-terms"
-                class="rental-terms"
-                aria-labelledby="rental-terms-title"
-        >
-            <div class="container rental-terms__layout">
-
-                <div class="section-heading">
-                    <p class="section-heading__eyebrow">
-                        Przed rezerwacją
-                    </p>
-
-                    <h2
-                            id="rental-terms-title"
-                            class="section-heading__title"
-                    >
-                        Warunki wynajmu
-                    </h2>
-
-                    <p class="section-heading__description">
-                        Najważniejsze informacje dotyczące rezerwacji,
-                        ceny oraz obsługi wypożyczenia.
-                    </p>
+        <section class="home-navigation" aria-labelledby="home-navigation-title">
+            <div class="container">
+                <div class="home-section-heading">
+                    <div>
+                        <p>Car Rental</p>
+                        <h2 id="home-navigation-title">Wybierz, czego potrzebujesz</h2>
+                    </div>
                 </div>
 
-                <div class="rental-terms__list">
+                <div class="home-navigation__grid">
+                    <a class="home-navigation-card" href="/html/fleet.html">
+                        <span>01</span>
+                        <h3>Pełna flota</h3>
+                        <p>Przeglądaj i filtruj wszystkie aktywne samochody.</p>
+                        <strong>Zobacz samochody →</strong>
+                    </a>
 
-                    <details class="rental-term">
-                        <summary>
-                            Termin i dostępność samochodu
-                        </summary>
+                    <a class="home-navigation-card" href="/html/availability.html">
+                        <span>02</span>
+                        <h3>Dostępność</h3>
+                        <p>Wskaż termin i zobacz pojazdy bez kolidujących rezerwacji.</p>
+                        <strong>Wybierz termin →</strong>
+                    </a>
 
-                        <p>
-                            Data zwrotu musi przypadać po dacie odbioru.
-                            System blokuje utworzenie rezerwacji, jeżeli
-                            wybrany samochód jest już zajęty w tym okresie.
-                        </p>
-                    </details>
-
-                    <details class="rental-term">
-                        <summary>
-                            Obliczanie ceny wynajmu
-                        </summary>
-
-                        <p>
-                            Łączna cena jest obliczana automatycznie
-                            na podstawie liczby dni wypożyczenia
-                            oraz aktualnej ceny samochodu za dobę.
-                        </p>
-                    </details>
-
-                    <details class="rental-term">
-                        <summary>
-                            Potwierdzenie i odbiór
-                        </summary>
-
-                        <p>
-                            Nowa rezerwacja otrzymuje status oczekujący.
-                            Pracownik potwierdza ją przed rozpoczęciem
-                            wypożyczenia i obsługuje wydanie samochodu.
-                        </p>
-                    </details>
-
-                    <details class="rental-term">
-                        <summary>
-                            Anulowanie rezerwacji
-                        </summary>
-
-                        <p>
-                            Możliwość anulowania zależy od aktualnego
-                            statusu rezerwacji. Zakończonego wypożyczenia
-                            nie można ponownie anulować.
-                        </p>
-                    </details>
-
+                    <a class="home-navigation-card" href="/html/rental-terms.html">
+                        <span>03</span>
+                        <h3>Warunki wynajmu</h3>
+                        <p>Sprawdź zasady ceny, rezerwacji, anulowania i odbioru.</p>
+                        <strong>Przeczytaj warunki →</strong>
+                    </a>
                 </div>
-
             </div>
         </section>
-
     </main>
-
 </div>
 
-<script
-        type="module"
-        src="/js/pages/home.js"
-></script>
-
+<script type="module" src="/js/pages/home.js"></script>
 </body>
 </html>
