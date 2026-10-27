@@ -46,6 +46,8 @@ const enumLabels = {
     SUV: "SUV",
     MINIVAN: "Minivan",
     VAN: "Van",
+    LIFTBACK: "Liftback",
+    CABRIOLET: "Kabriolet",
 
     ECONOMY: "Ekonomiczny",
     COMPACT: "Kompakt",
@@ -55,6 +57,25 @@ const enumLabels = {
     ACTIVE: "Dostępny",
     IN_SERVICE: "W serwisie",
     INACTIVE: "Nieaktywny"
+};
+
+const colorLabels = {
+    BLACK: "Czarny",
+    WHITE: "Biały",
+    SILVER: "Srebrny",
+    GRAY: "Szary",
+    GREY: "Szary",
+    DARK_GRAY: "Ciemnoszary",
+    GRAPHITE_GRAY: "Grafitowy",
+    BLUE: "Niebieski",
+    DARK_BLUE: "Granatowy",
+    GREEN: "Zielony",
+    RED: "Czerwony",
+    ORANGE: "Pomarańczowy",
+    YELLOW: "Żółty",
+    GOLD: "Złoty",
+    BROWN: "Brązowy",
+    BEIGE: "Beżowy"
 };
 
 const galleryImagePositions = {
@@ -444,9 +465,7 @@ function renderSpecifications(car) {
         },
         {
             label: "Kolor",
-            value:
-                car.color
-                || "Brak danych"
+            value: getColorLabel(car.color)
         }
     ];
 
@@ -547,6 +566,20 @@ function initializeAvailabilityForm() {
             "click",
             savePendingReservation
         );
+}
+
+function getColorLabel(color) {
+    if (!color) {
+        return "Brak danych";
+    }
+
+    const normalizedColor = color
+        .trim()
+        .toUpperCase()
+        .replaceAll("-", "_")
+        .replaceAll(" ", "_");
+
+    return colorLabels[normalizedColor] ?? color;
 }
 
 function loadDatesFromAddress() {

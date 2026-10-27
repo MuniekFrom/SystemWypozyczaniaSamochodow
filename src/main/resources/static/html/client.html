@@ -3,43 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Panel klienta Car Rental – rezerwacje, historia i dane konta.">
     <title>Panel klienta | Car Rental</title>
+
+    <script src="/js/core/theme-bootstrap.js"></script>
 
     <link rel="preload" as="image" href="/images/hero/loading-page-car.webp">
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/components.css">
     <link rel="stylesheet" href="/css/components/page-loader.css">
+    <link rel="stylesheet" href="/css/components/page-loader-theme.css">
+    <link rel="stylesheet" href="/css/components/site-header.css">
     <link rel="stylesheet" href="/css/pages/client.css">
 
     <noscript>
         <style>
-            #page-loader { display: none; }
-            body.is-loading { overflow: auto; }
-            body.is-loading .page-content { visibility: visible; opacity: 1; transform: none; }
+            #page-loader {
+                display: none;
+            }
+
+            body.is-loading {
+                overflow: auto;
+            }
+
+            body.is-loading .page-content {
+                visibility: visible;
+                opacity: 1;
+                transform: none;
+            }
         </style>
     </noscript>
 </head>
+
 <body class="is-loading">
 
 <div
         id="page-loader"
         class="page-loader"
         data-loader-image="/images/hero/loading-page-car.webp"
+        style="--intro-scene-duration: 1300ms; --intro-exit-duration: 350ms;"
         role="status"
-        aria-label="Ładowanie strony"
+        aria-label="Ładowanie panelu klienta"
 >
     <div class="page-loader__visual">
         <img
                 class="page-loader__car"
                 src="/images/hero/loading-page-car.webp"
                 alt=""
-                width="1920"
-                height="1080"
         >
         <span class="page-loader__light" aria-hidden="true"></span>
     </div>
 
-    <p class="page-loader__text">Przygotowujemy samochody...</p>
+    <p class="page-loader__text">
+        Przygotowujemy Twoje rezerwacje...
+    </p>
 
     <div class="page-loader__progress" aria-hidden="true">
         <span></span>
@@ -47,27 +64,432 @@
 </div>
 
 <div class="page-content">
-    <header class="site-header">
-        <div class="container site-header__content">
-            <a class="brand" href="/" aria-label="Car Rental – strona główna">
-                <span class="brand__mark" aria-hidden="true">CR</span>
-                <span>Car Rental</span>
-            </a>
+    <header id="site-header"></header>
 
-            <nav class="navigation" aria-label="Główna nawigacja">
-                <a class="button button--outline" href="/html/login.html">Logowanie</a>
-                <a class="button button--primary" href="/html/register.html">Rejestracja</a>
-            </nav>
-        </div>
-    </header>
+    <main class="client-dashboard">
+        <section class="client-hero">
+            <div class="container client-hero__layout">
+                <div class="client-hero__content">
+                    <p class="client-hero__eyebrow">
+                        Panel klienta
+                    </p>
 
-    <main class="container card">
-        <h1>Panel klienta</h1>
-        <p>Twoje rezerwacje i dane konta.</p>
-        <a class="button button--outline" href="/">Wróć na stronę główną</a>
+                    <h1 id="client-greeting">
+                        Dzień dobry
+                    </h1>
+
+                    <p>
+                        Sprawdź najbliższy wynajem, historię rezerwacji
+                        i najważniejsze informacje o swoim koncie.
+                    </p>
+
+                    <div class="client-hero__actions">
+                        <a
+                                class="button button--primary"
+                                href="/html/availability.html"
+                        >
+                            Zarezerwuj samochód
+                        </a>
+
+                        <a
+                                class="button client-hero__secondary"
+                                href="/html/fleet.html"
+                        >
+                            Przeglądaj flotę
+                        </a>
+                    </div>
+                </div>
+
+                <article
+                        class="client-identity"
+                        aria-label="Dane zalogowanego klienta"
+                >
+                    <div
+                            id="client-avatar"
+                            class="client-identity__avatar"
+                            aria-hidden="true"
+                    >
+                        CR
+                    </div>
+
+                    <div>
+                        <p class="client-identity__label">
+                            Zalogowano jako
+                        </p>
+
+                        <h2 id="client-full-name">
+                            Ładowanie danych...
+                        </h2>
+
+                        <p id="client-email">—</p>
+                    </div>
+
+                    <span class="client-identity__role">
+                        Klient
+                    </span>
+                </article>
+            </div>
+        </section>
+
+        <section class="client-content">
+            <div class="container">
+                <p
+                        id="client-page-status"
+                        class="client-page-status"
+                        role="status"
+                        aria-live="polite"
+                >
+                    Pobieranie danych konta i rezerwacji...
+                </p>
+
+                <section
+                        class="client-statistics"
+                        aria-label="Podsumowanie rezerwacji"
+                >
+                    <article class="client-stat-card">
+                        <span
+                                class="client-stat-card__icon"
+                                aria-hidden="true"
+                        >
+                            01
+                        </span>
+
+                        <div>
+                            <p>Aktywne rezerwacje</p>
+                            <strong id="active-reservations-count">—</strong>
+                        </div>
+                    </article>
+
+                    <article class="client-stat-card">
+                        <span
+                                class="client-stat-card__icon"
+                                aria-hidden="true"
+                        >
+                            02
+                        </span>
+
+                        <div>
+                            <p>Trwające wynajmy</p>
+                            <strong id="in-progress-count">—</strong>
+                        </div>
+                    </article>
+
+                    <article class="client-stat-card">
+                        <span
+                                class="client-stat-card__icon"
+                                aria-hidden="true"
+                        >
+                            03
+                        </span>
+
+                        <div>
+                            <p>Zakończone wynajmy</p>
+                            <strong id="completed-count">—</strong>
+                        </div>
+                    </article>
+
+                    <article class="client-stat-card client-stat-card--accent">
+                        <span
+                                class="client-stat-card__icon"
+                                aria-hidden="true"
+                        >
+                            PLN
+                        </span>
+
+                        <div>
+                            <p>Wartość zakończonych</p>
+                            <strong id="completed-value">—</strong>
+                        </div>
+                    </article>
+                </section>
+
+                <section class="client-main-grid">
+                    <div class="client-main-column">
+                        <article class="dashboard-card next-reservation-card">
+                            <div class="dashboard-card__heading">
+                                <div>
+                                    <p class="dashboard-card__eyebrow">
+                                        Najbliższy termin
+                                    </p>
+
+                                    <h2>
+                                        Twoja następna rezerwacja
+                                    </h2>
+                                </div>
+
+                                <a
+                                        class="dashboard-card__link"
+                                        href="#reservations-history"
+                                >
+                                    Zobacz wszystkie
+                                </a>
+                            </div>
+
+                            <div
+                                    id="next-reservation"
+                                    class="next-reservation"
+                            >
+                                <div class="client-skeleton client-skeleton--image"></div>
+
+                                <div class="next-reservation__body">
+                                    <div class="client-skeleton client-skeleton--line"></div>
+                                    <div class="client-skeleton client-skeleton--line-short"></div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article
+                                id="reservations-history"
+                                class="dashboard-card reservations-card"
+                        >
+                            <div class="dashboard-card__heading reservations-card__heading">
+                                <div>
+                                    <p class="dashboard-card__eyebrow">
+                                        Historia zamówień
+                                    </p>
+
+                                    <h2>Moje rezerwacje</h2>
+                                </div>
+
+                                <a
+                                        class="button button--primary reservations-card__new"
+                                        href="/html/availability.html"
+                                >
+                                    Nowa rezerwacja
+                                </a>
+                            </div>
+
+                            <div
+                                    class="reservation-filters"
+                                    aria-label="Filtrowanie rezerwacji"
+                            >
+                                <button
+                                        class="reservation-filter is-active"
+                                        type="button"
+                                        data-filter="ALL"
+                                        aria-pressed="true"
+                                >
+                                    Wszystkie
+                                </button>
+
+                                <button
+                                        class="reservation-filter"
+                                        type="button"
+                                        data-filter="ACTIVE"
+                                        aria-pressed="false"
+                                >
+                                    Aktywne
+                                </button>
+
+                                <button
+                                        class="reservation-filter"
+                                        type="button"
+                                        data-filter="COMPLETED"
+                                        aria-pressed="false"
+                                >
+                                    Zakończone
+                                </button>
+
+                                <button
+                                        class="reservation-filter"
+                                        type="button"
+                                        data-filter="CANCELLED"
+                                        aria-pressed="false"
+                                >
+                                    Anulowane
+                                </button>
+                            </div>
+
+                            <p
+                                    id="reservations-status"
+                                    class="reservations-status"
+                                    role="status"
+                                    aria-live="polite"
+                            >
+                                Ładowanie rezerwacji...
+                            </p>
+
+                            <div
+                                    id="reservations-list"
+                                    class="reservations-list"
+                            ></div>
+                        </article>
+                    </div>
+
+                    <aside class="client-side-column">
+                        <article class="dashboard-card profile-card">
+                            <div class="dashboard-card__heading">
+                                <div>
+                                    <p class="dashboard-card__eyebrow">
+                                        Twoje konto
+                                    </p>
+
+                                    <h2>Dane klienta</h2>
+                                </div>
+                            </div>
+
+                            <dl class="profile-details">
+                                <div>
+                                    <dt>Imię i nazwisko</dt>
+                                    <dd id="profile-name">—</dd>
+                                </div>
+
+                                <div>
+                                    <dt>Adres e-mail</dt>
+                                    <dd id="profile-email">—</dd>
+                                </div>
+
+                                <div>
+                                    <dt>Numer telefonu</dt>
+                                    <dd id="profile-phone">—</dd>
+                                </div>
+
+                                <div>
+                                    <dt>Klient od</dt>
+                                    <dd id="profile-created-at">—</dd>
+                                </div>
+                            </dl>
+
+                            <p class="profile-card__notice">
+                                Dane konta są chronione przez
+                                uwierzytelnianie JWT.
+                            </p>
+                        </article>
+
+                        <article class="dashboard-card quick-actions-card">
+                            <div class="dashboard-card__heading">
+                                <div>
+                                    <p class="dashboard-card__eyebrow">
+                                        Na skróty
+                                    </p>
+
+                                    <h2>Przydatne opcje</h2>
+                                </div>
+                            </div>
+
+                            <nav
+                                    class="quick-actions"
+                                    aria-label="Skróty panelu klienta"
+                            >
+                                <a href="/html/availability.html">
+                                    <span aria-hidden="true">→</span>
+
+                                    <div>
+                                        <strong>
+                                            Sprawdź dostępność
+                                        </strong>
+
+                                        <small>
+                                            Znajdź auto w wybranym terminie
+                                        </small>
+                                    </div>
+                                </a>
+
+                                <a href="/html/fleet.html">
+                                    <span aria-hidden="true">→</span>
+
+                                    <div>
+                                        <strong>
+                                            Porównaj samochody
+                                        </strong>
+
+                                        <small>
+                                            Zobacz ceny i dane techniczne
+                                        </small>
+                                    </div>
+                                </a>
+
+                                <a href="/html/rental-terms.html">
+                                    <span aria-hidden="true">→</span>
+
+                                    <div>
+                                        <strong>
+                                            Warunki wynajmu
+                                        </strong>
+
+                                        <small>
+                                            Sprawdź zasady odbioru i zwrotu
+                                        </small>
+                                    </div>
+                                </a>
+                            </nav>
+                        </article>
+                    </aside>
+                </section>
+            </div>
+        </section>
     </main>
 </div>
 
-<script type="module" src="/js/pages/client.js"></script>
+<dialog
+        id="cancel-dialog"
+        class="cancel-dialog"
+        aria-labelledby="cancel-dialog-title"
+>
+    <form
+            method="dialog"
+            class="cancel-dialog__content"
+    >
+        <button
+                class="cancel-dialog__close"
+                value="close"
+                aria-label="Zamknij okno"
+                type="submit"
+        >
+            ×
+        </button>
+
+        <span
+                class="cancel-dialog__icon"
+                aria-hidden="true"
+        >
+            !
+        </span>
+
+        <p class="dashboard-card__eyebrow">
+            Potwierdzenie operacji
+        </p>
+
+        <h2 id="cancel-dialog-title">
+            Anulować rezerwację?
+        </h2>
+
+        <p id="cancel-dialog-description">
+            Tej operacji nie będzie można cofnąć.
+        </p>
+
+        <div class="cancel-dialog__actions">
+            <button
+                    class="button button--outline"
+                    value="close"
+                    type="submit"
+            >
+                Wróć
+            </button>
+
+            <button
+                    id="confirm-cancellation"
+                    class="button cancel-dialog__confirm"
+                    value="confirm"
+                    type="button"
+            >
+                Anuluj rezerwację
+            </button>
+        </div>
+    </form>
+</dialog>
+
+<div
+        id="client-toast"
+        class="client-toast"
+        role="status"
+        aria-live="polite"
+        hidden
+></div>
+
+<script
+        type="module"
+        src="/js/pages/client.js"
+></script>
 </body>
 </html>

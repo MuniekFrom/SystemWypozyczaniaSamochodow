@@ -1,4 +1,10 @@
 import { initThemeSettings } from "/js/core/theme.js";
+import {
+    clearAuthSession,
+    getAccessToken,
+    getDashboardUrl,
+    getRoleFromToken
+} from "/js/core/auth.js";
 
 const navigationItems = [
     {
@@ -24,6 +30,12 @@ export function renderSiteHeader(activePage = "") {
     if (!header) {
         return;
     }
+
+    const currentPath = window.location.pathname;
+    const isLoginPage = currentPath.endsWith("/login.html");
+    const isRegisterPage = currentPath.endsWith("/register.html");
+    const accessToken = getAccessToken();
+    const role = accessToken ? getRoleFromToken(accessToken) : null;
 
     header.className = "site-header";
     header.innerHTML = `
@@ -97,13 +109,19 @@ export function renderSiteHeader(activePage = "") {
                     </div>
                 </div>
 
-                <a class="button button--outline" href="/html/login.html">Logowanie</a>
-                <a class="button button--primary" href="/html/register.html">Rejestracja</a>
+                ${createAccountActions({
+        accessToken,
+        role,
+        activePage,
+        isLoginPage,
+        isRegisterPage
+    })}
             </div>
         </div>
     `;
 
     initThemeSettings();
+    bindLogoutButton();
 }
 
 function createNavigationLink(item, activePage) {
@@ -118,4 +136,56 @@ function createNavigationLink(item, activePage) {
             ${item.label}
         </a>
     `;
+}
+
+function createAccountActions({
+                                  accessToken,
+                                  role,
+                                  activePage,
+                                  isLoginPage,
+                                  isRegisterPage
+                              }) {
+    if (accessToken && role) {
+        const dashboardUrl = getDashboardUrl(role);
+        const isDashboardActive = activePage === "client"
+            || activePage === "employee"
+            || activePage === "admin";
+
+        return `
+            <a
+                class="button button--primary${isDashboardActive ? " is-current" : ""}"
+                href="${dashboardUrl}"
+                ${isDashboardActive ? 'aria-current="page"' : ""}
+            >
+                Moje konto
+            </a>
+            <button id="header-logout" class="button button--outline" type="button">
+                Wyloguj
+            </button>
+        `;
+    }
+
+    return `
+        <a
+            class="button button--outline${isLoginPage ? " is-current" : ""}"
+            href="/html/login.html"
+            ${isLoginPage ? 'aria-current="page"' : ""}
+        >
+            Logowanie
+        </a>
+        <a
+            class="button button--primary${isRegisterPage ? " is-current" : ""}"
+            href="/html/register.html"
+            ${isRegisterPage ? 'aria-current="page"' : ""}
+        >
+            Rejestracja
+        </a>
+    `;
+}
+
+function bindLogoutButton() {
+    document.querySelector("#header-logout")?.addEventListener("click", () => {
+        clearAuthSession();
+        window.location.assign("/");
+    });
 }

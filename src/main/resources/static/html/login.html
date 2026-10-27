@@ -3,68 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Zaloguj się do swojego konta Car Rental.">
     <title>Logowanie | Car Rental</title>
+
+    <script src="/js/core/theme-bootstrap.js"></script>
 
     <link rel="preload" as="image" href="/images/hero/loading-page-car.webp">
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/components.css">
     <link rel="stylesheet" href="/css/components/page-loader.css">
+    <link rel="stylesheet" href="/css/components/page-loader-theme.css">
+    <link rel="stylesheet" href="/css/components/site-header.css">
+    <link rel="stylesheet" href="/css/components/auth-shell.css">
     <link rel="stylesheet" href="/css/pages/login.css">
 
     <noscript>
         <style>
             #page-loader { display: none; }
             body.is-loading { overflow: auto; }
-            body.is-loading .page-content { visibility: visible; opacity: 1; transform: none; }
+            body.is-loading .page-content {
+                visibility: visible;
+                opacity: 1;
+                transform: none;
+            }
         </style>
     </noscript>
 </head>
-<body class="is-loading">
 
+<body class="is-loading">
 <div
         id="page-loader"
         class="page-loader"
         data-loader-image="/images/hero/loading-page-car.webp"
+        style="--intro-scene-duration: 1300ms; --intro-exit-duration: 350ms;"
         role="status"
-        aria-label="Ładowanie strony"
+        aria-label="Ładowanie logowania"
 >
     <div class="page-loader__visual">
-        <img
-                class="page-loader__car"
-                src="/images/hero/loading-page-car.webp"
-                alt=""
-                width="1920"
-                height="1080"
-        >
+        <img class="page-loader__car" src="/images/hero/loading-page-car.webp" alt="">
         <span class="page-loader__light" aria-hidden="true"></span>
     </div>
-
     <p class="page-loader__text">Przygotowujemy samochody...</p>
-
-    <div class="page-loader__progress" aria-hidden="true">
-        <span></span>
-    </div>
+    <div class="page-loader__progress" aria-hidden="true"><span></span></div>
 </div>
 
 <div class="page-content">
-    <header class="site-header">
-        <div class="container site-header__content">
-            <a class="brand" href="/" aria-label="Car Rental – strona główna">
-                <span class="brand__mark" aria-hidden="true">CR</span>
-                <span>Car Rental</span>
-            </a>
+    <header id="site-header"></header>
 
-            <nav class="navigation" aria-label="Główna nawigacja">
-                <a class="button button--outline" href="/html/login.html">Logowanie</a>
-                <a class="button button--primary" href="/html/register.html">Rejestracja</a>
-            </nav>
+    <main class="auth-page auth-page--login">
+        <div class="container auth-layout">
+            <section class="auth-showcase" aria-labelledby="login-showcase-title">
+                <div class="auth-showcase__glow" aria-hidden="true"></div>
+
+                <div class="auth-showcase__content">
+                    <p class="auth-eyebrow">Strefa klienta</p>
+                    <h1 id="login-showcase-title">Wróć na drogę.</h1>
+                    <p class="auth-showcase__lead">
+                        Zaloguj się, aby zarządzać rezerwacjami i szybko
+                        wrócić do planowania kolejnej podróży.
+                    </p>
+
+                    <div class="auth-showcase__actions">
+                        <a class="button button--primary" href="/html/availability.html">
+                            Sprawdź dostępność
+                        </a>
+                        <a class="auth-text-link auth-text-link--light" href="/html/fleet.html">
+                            Zobacz całą flotę →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="auth-benefits" aria-label="Korzyści konta">
+                    <div class="auth-benefit">
+                        <span>01</span>
+                        <div>
+                            <strong>Twoje rezerwacje</strong>
+                            <p>Wszystkie terminy i statusy w jednym miejscu.</p>
+                        </div>
+                    </div>
+                    <div class="auth-benefit">
+                        <span>02</span>
+                        <div>
+                            <strong>Szybsza rezerwacja</strong>
+                            <p>Wybierz samochód i potwierdź termin online.</p>
+                        </div>
+                    </div>
+                    <div class="auth-benefit">
+                        <span>03</span>
+                        <div>
+                            <strong>Bezpieczne konto</strong>
+                            <p>Logowanie chronione hasłem i tokenem dostępu.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="auth-card" aria-labelledby="login-title">
+                <div class="auth-card__header">
+                    <p class="auth-eyebrow">Witaj ponownie</p>
+                    <h2 id="login-title">Zaloguj się</h2>
+                    <p>
+                        Nie masz jeszcze konta?
+                        <a class="auth-text-link" href="/html/register.html">Załóż je bezpłatnie</a>
+                    </p>
+                </div>
+
+                <form id="login-form" class="auth-form">
+                    <div class="auth-field">
+                        <label for="login-email">Adres e-mail</label>
+                        <input
+                                id="login-email"
+                                name="email"
+                                type="email"
+                                autocomplete="email"
+                                maxlength="255"
+                                required
+                        >
+                    </div>
+
+                    <div class="auth-field">
+                        <div class="auth-field__label-row">
+                            <label for="login-password">Hasło</label>
+                            <button
+                                    class="password-toggle"
+                                    type="button"
+                                    data-password-target="login-password"
+                                    aria-label="Pokaż hasło"
+                            >
+                                Pokaż
+                            </button>
+                        </div>
+                        <input
+                                id="login-password"
+                                name="password"
+                                type="password"
+                                autocomplete="current-password"
+                                minlength="8"
+                                maxlength="72"
+                                required
+                        >
+                    </div>
+
+                    <label class="auth-checkbox">
+                        <input id="remember-me" name="rememberMe" type="checkbox" checked>
+                        <span>
+                            Zapamiętaj mnie na tym urządzeniu
+                            <small>Odznacz tę opcję na współdzielonym komputerze.</small>
+                        </span>
+                    </label>
+
+                    <p id="login-status" class="auth-status" role="status" aria-live="polite"></p>
+
+                    <button id="login-submit" class="button button--primary auth-submit" type="submit">
+                        Zaloguj się
+                    </button>
+                </form>
+
+                <div class="auth-divider"><span>lub</span></div>
+
+                <a class="button button--outline auth-secondary-cta" href="/html/register.html">
+                    Utwórz nowe konto
+                </a>
+
+                <p class="auth-card__footer">
+                    Kontynuując, korzystasz z bezpiecznego połączenia Car Rental.
+                </p>
+            </section>
         </div>
-    </header>
-
-    <main class="container card">
-        <h1>Logowanie</h1>
-        <p>Zaloguj się na swoje konto w Car Rental.</p>
-        <a class="button button--outline" href="/">Wróć na stronę główną</a>
     </main>
 </div>
 

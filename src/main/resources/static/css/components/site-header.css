@@ -6,6 +6,15 @@
     transform: scaleX(1);
 }
 
+.site-header__actions .button.is-current {
+    box-shadow: 0 0 0 3px rgba(183, 149, 82, 0.16);
+}
+
+.site-header__actions .button--outline.is-current {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
 @media (max-width: 640px) {
     .site-header__actions {
         flex-wrap: wrap;

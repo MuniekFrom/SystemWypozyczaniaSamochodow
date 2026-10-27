@@ -34,6 +34,29 @@ const carImages = {
         "/images/cars/5/Peugeot1.webp",
         "/images/cars/5/Peugeot2.webp",
         "/images/cars/5/Peugeot3.webp"
+    ],
+
+    6: [
+        "/images/cars/6/skodaSuperb1.webp",
+        "/images/cars/6/skodaSuperb2.webp",
+        "/images/cars/6/skodaSuperb3.webp",
+        "/images/cars/6/skodaSuperb4.webp"
+    ],
+
+    7: [
+        "/images/cars/7/audi1.webp",
+        "/images/cars/7/audi2.webp",
+        "/images/cars/7/audi3.webp",
+        "/images/cars/7/audi4.webp",
+        "/images/cars/7/audi5.webp"
+    ],
+
+    8: [
+        "/images/cars/8/volkswagen1.webp",
+        "/images/cars/8/volkswagen2.webp",
+        "/images/cars/8/volkswagen3.webp",
+        "/images/cars/8/volkswagen4.webp",
+        "/images/cars/8/volkswagen5.webp"
     ]
 };
 
