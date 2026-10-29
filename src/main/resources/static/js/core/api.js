@@ -23,6 +23,7 @@ export async function apiRequest(path, options = {}) {
         return null;
     }
 
+
     const contentType = response.headers.get("content-type") ?? "";
     const responseBody = contentType.includes("application/json")
         ? await response.json()
@@ -49,9 +50,16 @@ export function getCarById(carId) {
     return apiRequest(`/cars/${carId}`);
 }
 
-export function getAvailableCars(startDate, endDate) {
-    const query = new URLSearchParams({ startDate, endDate });
+export function getAvailableCars(startAt, endAt) {
+    const query = new URLSearchParams({ startAt, endAt });
     return apiRequest(`/cars/available?${query.toString()}`);
+}
+
+export function getCarAvailabilitySlots(carId, date) {
+    const query = new URLSearchParams({ date });
+    return apiRequest(
+        `/cars/${carId}/availability-slots?${query.toString()}`
+    );
 }
 
 export function getCurrentUser() {
@@ -65,5 +73,12 @@ export function getMyReservations() {
 export function cancelReservation(reservationId) {
     return apiRequest(`/reservations/${reservationId}/cancel`, {
         method: "PATCH"
+    });
+}
+
+export function createReservation(request) {
+    return apiRequest("/reservations", {
+        method: "POST",
+        body: JSON.stringify(request)
     });
 }

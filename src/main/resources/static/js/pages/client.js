@@ -32,7 +32,9 @@ const currencyFormatter = new Intl.NumberFormat("pl-PL", {
 const dateFormatter = new Intl.DateTimeFormat("pl-PL", {
     day: "2-digit",
     month: "long",
-    year: "numeric"
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
 });
 
 const shortDateFormatter = new Intl.DateTimeFormat("pl-PL", {
@@ -232,11 +234,11 @@ function renderNextReservation() {
             <dl class="next-reservation__details">
                 <div>
                     <dt>Odbiór</dt>
-                    <dd>${formatDate(nextReservation.startDate)}</dd>
+                    <dd>${formatDate(nextReservation.startAt)}</dd>
                 </div>
                 <div>
                     <dt>Zwrot</dt>
-                    <dd>${formatDate(nextReservation.endDate)}</dd>
+                    <dd>${formatDate(nextReservation.endAt)}</dd>
                 </div>
                 <div>
                     <dt>Łączna cena</dt>
@@ -268,7 +270,7 @@ function renderReservations() {
     const filteredReservations = reservations
         .filter(matchesSelectedFilter)
         .sort((first, second) =>
-            createDate(second.startDate) - createDate(first.startDate)
+            createDate(second.startAt) - createDate(first.startAt)
         );
 
     reservationsList.replaceChildren();
@@ -302,7 +304,7 @@ function createReservationElement(reservation) {
     const article = document.createElement("article");
     const imagePath = getPrimaryCarImage(reservation.carId);
     const carName = `${reservation.carBrand} ${reservation.carModel}`;
-    const rentalDays = calculateRentalDays(reservation.startDate, reservation.endDate);
+    const rentalDays = calculateRentalDays(reservation.startAt, reservation.endAt);
 
     article.className = "reservation-item";
     article.innerHTML = `
@@ -326,10 +328,10 @@ function createReservationElement(reservation) {
             <dl class="reservation-item__details">
                 <div>
                     <dt>Termin</dt>
-                    <dd>${formatDate(reservation.startDate)} – ${formatDate(reservation.endDate)}</dd>
+                    <dd>${formatDate(reservation.startAt)} – ${formatDate(reservation.endAt)}</dd>
                 </div>
                 <div>
-                    <dt>Liczba dni</dt>
+                    <dt>Rozliczane doby</dt>
                     <dd>${rentalDays}</dd>
                 </div>
                 <div>
@@ -366,9 +368,9 @@ function findNextReservation() {
     }
 
     return activeReservations
-        .filter(reservation => createDate(reservation.endDate) >= startOfToday())
+        .filter(reservation => createDate(reservation.endAt) >= new Date())
         .sort((first, second) =>
-            createDate(first.startDate) - createDate(second.startDate)
+            createDate(first.startAt) - createDate(second.startAt)
         )[0] ?? null;
 }
 
@@ -452,36 +454,67 @@ function createReservationCountdown(reservation) {
         return "Wynajem jest obecnie w trakcie";
     }
 
-    const daysUntilStart = Math.ceil(
-        (createDate(reservation.startDate) - startOfToday()) / 86400000
+    const start = createDate(reservation.startAt);
+    const now = new Date();
+
+    if (isSameLocalDate(start, now)) {
+        return `Odbiór samochodu dzisiaj o ${formatTime(start)}`;
+    }
+
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    if (isSameLocalDate(start, tomorrow)) {
+        return `Odbiór samochodu jutro o ${formatTime(start)}`;
+    }
+
+    const daysUntilStart = Math.max(
+        0,
+        Math.ceil((start - now) / 86400000)
     );
 
-    if (daysUntilStart <= 0) {
-        return "Odbiór samochodu jest dzisiaj";
-    }
-
-    if (daysUntilStart === 1) {
-        return "Odbiór samochodu jutro";
-    }
-
     return `Odbiór samochodu za ${daysUntilStart} dni`;
+}
+
+function isSameLocalDate(first, second) {
+    return first.getFullYear() === second.getFullYear()
+        && first.getMonth() === second.getMonth()
+        && first.getDate() === second.getDate();
+}
+
+function formatTime(date) {
+    return date.toLocaleTimeString("pl-PL", {
+        hour: "2-digit",
+        minute: "2-digit"
+    });
 }
 
 function createCarDetailsUrl(reservation) {
     const query = new URLSearchParams({
         id: String(reservation.carId),
-        startDate: reservation.startDate,
-        endDate: reservation.endDate
+        startAt: reservation.startAt,
+        endAt: reservation.endAt
     });
 
     return `/html/car-details.html?${query.toString()}`;
 }
 
-function calculateRentalDays(startDate, endDate) {
+function calculateRentalDays(startAt, endAt) {
     return Math.max(
         1,
-        Math.round((createDate(endDate) - createDate(startDate)) / 86400000)
+        Math.ceil(
+            (getLocalDateTimeValue(endAt) - getLocalDateTimeValue(startAt))
+            / 86400000
+        )
     );
+}
+
+function getLocalDateTimeValue(value) {
+    const [datePart, timePart] = value.split("T");
+    const [year, month, day] = datePart.split("-").map(Number);
+    const [hour, minute] = timePart.split(":").map(Number);
+
+    return Date.UTC(year, month - 1, day, hour, minute);
 }
 
 function getStatusLabel(status) {
@@ -514,13 +547,7 @@ function formatPrice(value) {
 }
 
 function createDate(dateValue) {
-    return new Date(`${dateValue}T12:00:00`);
-}
-
-function startOfToday() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return today;
+    return new Date(dateValue);
 }
 
 function setText(selector, value) {

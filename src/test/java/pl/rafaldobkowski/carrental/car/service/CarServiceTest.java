@@ -6,6 +6,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import pl.rafaldobkowski.carrental.car.dto.CarAvailabilitySlotResponse;
 import pl.rafaldobkowski.carrental.car.dto.CarResponse;
 import pl.rafaldobkowski.carrental.car.dto.CreateCarRequest;
 import pl.rafaldobkowski.carrental.car.dto.UpdateCarRequest;
@@ -15,10 +16,13 @@ import pl.rafaldobkowski.carrental.car.exception.CarNotFoundException;
 import pl.rafaldobkowski.carrental.car.model.*;
 import pl.rafaldobkowski.carrental.car.repository.CarRepository;
 import pl.rafaldobkowski.carrental.reservation.exception.InvalidReservationPeriodException;
+import pl.rafaldobkowski.carrental.reservation.model.Reservation;
 import pl.rafaldobkowski.carrental.reservation.model.ReservationStatus;
+import pl.rafaldobkowski.carrental.reservation.repository.ReservationRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,6 +35,9 @@ class CarServiceTest {
 
     @Mock
     private CarRepository carRepository;
+
+    @Mock
+    private ReservationRepository reservationRepository;
 
     @InjectMocks
     private CarService carService;
@@ -306,8 +313,8 @@ class CarServiceTest {
 
     @Test
     void shouldReturnAvailableCarsForValidPeriod() {
-        LocalDate startDate = LocalDate.now().plusDays(1);
-        LocalDate endDate = LocalDate.now().plusDays(3);
+        LocalDateTime startAt = futureSlot(1);
+        LocalDateTime endAt = futureSlot(3);
 
         Car car = createTestCar();
 
@@ -319,14 +326,14 @@ class CarServiceTest {
                 );
 
         when(carRepository.findAvailableCars(
-                startDate,
-                endDate,
+                startAt.minusHours(4),
+                endAt.plusHours(4),
                 CarStatus.ACTIVE,
                 blockingStatuses
         )).thenReturn(List.of(car));
 
         List<CarResponse> result =
-                carService.getAvailableCars(startDate, endDate);
+                carService.getAvailableCars(startAt, endAt);
 
         assertEquals(1, result.size());
         assertEquals("Toyota", result.getFirst().brand());
@@ -337,8 +344,8 @@ class CarServiceTest {
         );
 
         verify(carRepository).findAvailableCars(
-                startDate,
-                endDate,
+                startAt.minusHours(4),
+                endAt.plusHours(4),
                 CarStatus.ACTIVE,
                 blockingStatuses
         );
@@ -346,43 +353,92 @@ class CarServiceTest {
 
     @Test
     void shouldRejectAvailabilitySearchStartingInPast() {
-        LocalDate startDate = LocalDate.now().minusDays(1);
-        LocalDate endDate = LocalDate.now().plusDays(2);
+        LocalDateTime startAt = futureSlot(-1);
+        LocalDateTime endAt = futureSlot(2);
 
         InvalidReservationPeriodException exception = assertThrows(
                 InvalidReservationPeriodException.class,
                 () -> carService.getAvailableCars(
-                        startDate,
-                        endDate
+                        startAt,
+                        endAt
                 )
         );
 
         assertEquals(
-                "Start date cannot be in the past",
+                "Start date and time cannot be in the past",
                 exception.getMessage()
         );
 
-        verifyNoInteractions(carRepository);
+        verifyNoInteractions(carRepository, reservationRepository);
     }
 
     @Test
     void shouldRejectAvailabilitySearchWhenEndDateIsNotAfterStartDate() {
-        LocalDate startDate = LocalDate.now().plusDays(2);
-        LocalDate endDate = startDate;
+        LocalDateTime startAt = futureSlot(2);
+        LocalDateTime endAt = startAt;
 
         InvalidReservationPeriodException exception = assertThrows(
                 InvalidReservationPeriodException.class,
                 () -> carService.getAvailableCars(
-                        startDate,
-                        endDate
+                        startAt,
+                        endAt
                 )
         );
 
         assertEquals(
-                "End date must be after start date",
+                "End date and time must be after start date and time",
                 exception.getMessage()
         );
 
-        verifyNoInteractions(carRepository);
+        verifyNoInteractions(carRepository, reservationRepository);
+    }
+
+    @Test
+    void shouldReturnHalfHourSlotsWithFourHourTurnaroundBlocked() {
+        Long carId = 1L;
+        LocalDate date = LocalDate.now().plusDays(5);
+        Car car = createTestCar();
+        Reservation reservation = mock(Reservation.class);
+
+        when(carRepository.findById(carId))
+                .thenReturn(Optional.of(car));
+        when(reservation.getStartAt())
+                .thenReturn(date.minusDays(2).atTime(10, 0));
+        when(reservation.getEndAt())
+                .thenReturn(date.atTime(13, 0));
+        when(reservationRepository.findBlockingReservationsForCar(
+                eq(carId),
+                eq(date.atStartOfDay().minusHours(4)),
+                eq(date.plusDays(1).atStartOfDay()),
+                anyList()
+        )).thenReturn(List.of(reservation));
+
+        List<CarAvailabilitySlotResponse> slots =
+                carService.getAvailabilitySlots(carId, date);
+
+        assertEquals(48, slots.size());
+        assertEquals(false, availabilityAt(slots, "13:00"));
+        assertEquals(false, availabilityAt(slots, "16:30"));
+        assertEquals(true, availabilityAt(slots, "17:00"));
+    }
+
+    private boolean availabilityAt(
+            List<CarAvailabilitySlotResponse> slots,
+            String time) {
+
+        return slots.stream()
+                .filter(slot -> slot.time().equals(time))
+                .findFirst()
+                .orElseThrow()
+                .available();
+    }
+
+    private LocalDateTime futureSlot(long days) {
+        return LocalDateTime.now()
+                .plusDays(days)
+                .withHour(10)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
     }
 }

@@ -335,6 +335,16 @@
     width: 100%;
 }
 
+.reservation-form select option:disabled {
+    color: var(--color-text-muted);
+    background-color: var(--color-surface-secondary);
+}
+
+.reservation-form select:disabled {
+    cursor: wait;
+    opacity: 0.7;
+}
+
 .price-summary {
     margin-top: 18px;
     padding: 16px;

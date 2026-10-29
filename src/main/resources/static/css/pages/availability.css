@@ -53,6 +53,11 @@
     opacity: 0.65;
 }
 
+.availability-search select option:disabled {
+    color: var(--color-text-muted);
+    background-color: var(--color-surface-secondary);
+}
+
 .availability-results {
     min-height: 440px;
     padding-block: clamp(58px, 8vw, 96px);

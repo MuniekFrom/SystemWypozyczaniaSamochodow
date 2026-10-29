@@ -20,12 +20,24 @@ import pl.rafaldobkowski.carrental.user.model.User;
 import pl.rafaldobkowski.carrental.user.repository.UserRepository;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
 public class ReservationService {
+
+    private static final Duration TURNAROUND_BUFFER = Duration.ofHours(4);
+    private static final int TIME_SLOT_MINUTES = 30;
+    private static final long MINUTES_PER_DAY = 24L * 60L;
+
+    private static final List<ReservationStatus> BLOCKING_STATUSES =
+            List.of(
+                    ReservationStatus.PENDING,
+                    ReservationStatus.CONFIRMED,
+                    ReservationStatus.IN_PROGRESS
+            );
 
     private final ReservationRepository reservationRepository;
     private final CarRepository carRepository;
@@ -39,44 +51,6 @@ public class ReservationService {
         this.reservationRepository = reservationRepository;
         this.carRepository = carRepository;
         this.userRepository = userRepository;
-    }
-
-    private static final List<ReservationStatus> BLOCKING_STATUSES =
-            List.of(
-                    ReservationStatus.PENDING,
-                    ReservationStatus.CONFIRMED,
-                    ReservationStatus.IN_PROGRESS
-            );
-
-    private void validatePeriod(CreateReservationRequest request) {
-        LocalDate startDate = request.startDate();
-        LocalDate endDate = request.endDate();
-
-        if (startDate.isBefore(LocalDate.now())) {
-            throw new InvalidReservationPeriodException(
-                    "Start date cannot be in the past"
-            );
-        }
-
-        if (!endDate.isAfter(startDate)) {
-            throw new InvalidReservationPeriodException(
-                    "End date must be after start date"
-            );
-        }
-    }
-
-    private User findUserByIdOrThrow(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(
-                        "User with id " + userId + " was not found"
-                ));
-    }
-
-    private Car findCarByIdOrThrow(Long carId) {
-        return carRepository.findById(carId)
-                .orElseThrow(() -> new CarNotFoundException(
-                        "Car with id " + carId + " was not found."
-                ));
     }
 
     @Transactional
@@ -102,11 +76,17 @@ public class ReservationService {
             );
         }
 
+        LocalDateTime blockingWindowStart =
+                request.startAt().minus(TURNAROUND_BUFFER);
+
+        LocalDateTime blockingWindowEnd =
+                request.endAt().plus(TURNAROUND_BUFFER);
+
         boolean overlappingReservation =
                 reservationRepository.existsOverlappingReservation(
                         car.getId(),
-                        request.startDate(),
-                        request.endDate(),
+                        blockingWindowStart,
+                        blockingWindowEnd,
                         BLOCKING_STATUSES
                 );
 
@@ -116,9 +96,9 @@ public class ReservationService {
             );
         }
 
-        long numberOfDays = ChronoUnit.DAYS.between(
-                request.startDate(),
-                request.endDate()
+        long numberOfDays = calculateBillableDays(
+                request.startAt(),
+                request.endAt()
         );
 
         BigDecimal totalPrice = car.getDailyPrice()
@@ -127,8 +107,8 @@ public class ReservationService {
         Reservation reservation = new Reservation(
                 user,
                 car,
-                request.startDate(),
-                request.endDate(),
+                request.startAt(),
+                request.endAt(),
                 totalPrice
         );
 
@@ -136,28 +116,6 @@ public class ReservationService {
                 reservationRepository.save(reservation);
 
         return mapToResponse(savedReservation);
-    }
-
-    private ReservationResponse mapToResponse(
-            Reservation reservation) {
-
-        return new ReservationResponse(
-                reservation.getId(),
-
-                reservation.getUser().getId(),
-                reservation.getUser().getEmail(),
-
-                reservation.getCar().getId(),
-                reservation.getCar().getBrand(),
-                reservation.getCar().getModel(),
-
-                reservation.getStartDate(),
-                reservation.getEndDate(),
-
-                reservation.getTotalPrice(),
-                reservation.getStatus(),
-                reservation.getCreatedAt()
-        );
     }
 
     @Transactional(readOnly = true)
@@ -198,11 +156,7 @@ public class ReservationService {
 
     @Transactional
     public ReservationResponse confirmReservation(Long reservationId) {
-        Reservation reservation = reservationRepository
-                .findById(reservationId)
-                .orElseThrow(() -> new ReservationNotFoundException(
-                        "Reservation not found"
-                ));
+        Reservation reservation = findReservationByIdOrThrow(reservationId);
 
         reservation.confirm();
 
@@ -211,11 +165,7 @@ public class ReservationService {
 
     @Transactional
     public ReservationResponse startReservation(Long reservationId) {
-        Reservation reservation = reservationRepository
-                .findById(reservationId)
-                .orElseThrow(() -> new ReservationNotFoundException(
-                        "Reservation not found"
-                ));
+        Reservation reservation = findReservationByIdOrThrow(reservationId);
 
         reservation.startRental();
 
@@ -224,16 +174,92 @@ public class ReservationService {
 
     @Transactional
     public ReservationResponse completeReservation(Long reservationId) {
-        Reservation reservation = reservationRepository
-                .findById(reservationId)
-                .orElseThrow(() -> new ReservationNotFoundException(
-                        "Reservation not found"
-                ));
+        Reservation reservation = findReservationByIdOrThrow(reservationId);
 
         reservation.complete();
 
         return mapToResponse(reservation);
     }
 
+    private void validatePeriod(CreateReservationRequest request) {
+        LocalDateTime startAt = request.startAt();
+        LocalDateTime endAt = request.endAt();
 
+        if (startAt.isBefore(LocalDateTime.now())) {
+            throw new InvalidReservationPeriodException(
+                    "Start date and time cannot be in the past"
+            );
+        }
+
+        if (!endAt.isAfter(startAt)) {
+            throw new InvalidReservationPeriodException(
+                    "End date and time must be after start date and time"
+            );
+        }
+
+        if (!isValidTimeSlot(startAt) || !isValidTimeSlot(endAt)) {
+            throw new InvalidReservationPeriodException(
+                    "Reservation times must use 30-minute intervals"
+            );
+        }
+    }
+
+    private boolean isValidTimeSlot(LocalDateTime dateTime) {
+        return dateTime.getMinute() % TIME_SLOT_MINUTES == 0
+                && dateTime.getSecond() == 0
+                && dateTime.getNano() == 0;
+    }
+
+    private long calculateBillableDays(
+            LocalDateTime startAt,
+            LocalDateTime endAt) {
+
+        long rentalMinutes = ChronoUnit.MINUTES.between(startAt, endAt);
+
+        return Math.max(
+                1L,
+                (rentalMinutes + MINUTES_PER_DAY - 1L) / MINUTES_PER_DAY
+        );
+    }
+
+    private User findUserByIdOrThrow(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(
+                        "User with id " + userId + " was not found"
+                ));
+    }
+
+    private Car findCarByIdOrThrow(Long carId) {
+        return carRepository.findById(carId)
+                .orElseThrow(() -> new CarNotFoundException(
+                        "Car with id " + carId + " was not found."
+                ));
+    }
+
+    private Reservation findReservationByIdOrThrow(Long reservationId) {
+        return reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ReservationNotFoundException(
+                        "Reservation not found"
+                ));
+    }
+
+    private ReservationResponse mapToResponse(Reservation reservation) {
+        return new ReservationResponse(
+                reservation.getId(),
+
+                reservation.getUser().getId(),
+                reservation.getUser().getEmail(),
+
+                reservation.getCar().getId(),
+                reservation.getCar().getBrand(),
+                reservation.getCar().getModel(),
+
+                reservation.getStartAt(),
+                reservation.getEndAt(),
+
+                reservation.getTotalPrice(),
+                reservation.getStatus(),
+                reservation.getCreatedAt()
+        );
+    }
 }

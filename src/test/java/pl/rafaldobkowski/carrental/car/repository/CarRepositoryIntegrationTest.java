@@ -1,5 +1,6 @@
 package pl.rafaldobkowski.carrental.car.repository;
 
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -9,19 +10,27 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.mysql.MySQLContainer;
-import pl.rafaldobkowski.carrental.car.model.*;
-
+import pl.rafaldobkowski.carrental.car.model.Car;
+import pl.rafaldobkowski.carrental.car.model.CarBodyType;
+import pl.rafaldobkowski.carrental.car.model.CarCategory;
+import pl.rafaldobkowski.carrental.car.model.CarDriveType;
+import pl.rafaldobkowski.carrental.car.model.CarFuelType;
+import pl.rafaldobkowski.carrental.car.model.CarStatus;
+import pl.rafaldobkowski.carrental.car.model.CarTransmissionType;
 import pl.rafaldobkowski.carrental.reservation.model.Reservation;
 import pl.rafaldobkowski.carrental.reservation.model.ReservationStatus;
 import pl.rafaldobkowski.carrental.reservation.repository.ReservationRepository;
 import pl.rafaldobkowski.carrental.user.model.User;
 import pl.rafaldobkowski.carrental.user.repository.UserRepository;
 
-import java.time.LocalDate;
-import java.util.List;
 import java.math.BigDecimal;
-import jakarta.persistence.EntityManager;
-import static org.junit.jupiter.api.Assertions.*;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DataJpaTest
 @Testcontainers
@@ -29,6 +38,13 @@ import static org.junit.jupiter.api.Assertions.*;
         replace = AutoConfigureTestDatabase.Replace.NONE
 )
 class CarRepositoryIntegrationTest {
+
+    private static final List<ReservationStatus> BLOCKING_STATUSES =
+            List.of(
+                    ReservationStatus.PENDING,
+                    ReservationStatus.CONFIRMED,
+                    ReservationStatus.IN_PROGRESS
+            );
 
     @Container
     @ServiceConnection
@@ -47,13 +63,6 @@ class CarRepositoryIntegrationTest {
     @Autowired
     private EntityManager entityManager;
 
-    private Car createTestCar() {
-        return createTestCar(
-                "BI12345",
-                "JTDBR32E720123456"
-        );
-    }
-
     @Test
     void shouldSaveCarInDatabase() {
         Car car = createTestCar();
@@ -62,11 +71,9 @@ class CarRepositoryIntegrationTest {
 
         assertNotNull(savedCar.getId());
         assertTrue(carRepository.existsByVin(car.getVin()));
-        assertTrue(
-                carRepository.existsByRegistrationNumber(
-                        car.getRegistrationNumber()
-                )
-        );
+        assertTrue(carRepository.existsByRegistrationNumber(
+                car.getRegistrationNumber()
+        ));
     }
 
     @Test
@@ -86,11 +93,16 @@ class CarRepositoryIntegrationTest {
 
     @Test
     void shouldRejectDuplicateRegistrationNumber() {
-
         String duplicatedRegistrationNumber = "BI12345";
 
-        Car firstCar = createTestCar(duplicatedRegistrationNumber, "JTDBR32E720123456");
-        Car secondCar = createTestCar(duplicatedRegistrationNumber, "JTDBR32E720123321");
+        Car firstCar = createTestCar(
+                duplicatedRegistrationNumber,
+                "JTDBR32E720123456"
+        );
+        Car secondCar = createTestCar(
+                duplicatedRegistrationNumber,
+                "JTDBR32E720123321"
+        );
 
         carRepository.saveAndFlush(firstCar);
 
@@ -102,21 +114,15 @@ class CarRepositoryIntegrationTest {
 
     @Test
     void shouldReturnOnlyCarsAvailableInSelectedPeriod() {
-        User user = new User(
-                "Anna",
-                "Nowak",
+        User user = createAndSaveUser(
                 "anna.availability@example.com",
-                "test-password-hash",
                 "+48123456789"
         );
-
-        userRepository.saveAndFlush(user);
 
         Car availableCar = createTestCar(
                 "BI11111",
                 "JTDBR32E720111111"
         );
-
         Car reservedCar = createTestCar(
                 "BI22222",
                 "JTDBR32E720222222"
@@ -126,104 +132,97 @@ class CarRepositoryIntegrationTest {
                 List.of(availableCar, reservedCar)
         );
 
-        Reservation reservation = new Reservation(
+        reservationRepository.saveAndFlush(new Reservation(
                 user,
                 reservedCar,
-                LocalDate.of(2026, 11, 10),
-                LocalDate.of(2026, 11, 12),
-                new BigDecimal("399.98")
+                LocalDateTime.of(2026, 11, 10, 10, 0),
+                LocalDateTime.of(2026, 11, 12, 13, 0),
+                new BigDecimal("599.97")
+        ));
+
+        List<Car> availableCars = carRepository.findAvailableCars(
+                LocalDateTime.of(2026, 11, 11, 6, 0),
+                LocalDateTime.of(2026, 11, 14, 14, 0),
+                CarStatus.ACTIVE,
+                BLOCKING_STATUSES
         );
 
-        reservationRepository.saveAndFlush(reservation);
-
-        List<Car> availableCars =
-                carRepository.findAvailableCars(
-                        LocalDate.of(2026, 11, 11),
-                        LocalDate.of(2026, 11, 14),
-                        CarStatus.ACTIVE,
-                        List.of(
-                                ReservationStatus.PENDING,
-                                ReservationStatus.CONFIRMED,
-                                ReservationStatus.IN_PROGRESS
-                        )
-                );
-
         assertEquals(1, availableCars.size());
-
         assertEquals(
                 availableCar.getId(),
                 availableCars.getFirst().getId()
         );
     }
 
-    private Car createTestCar(
-            String registrationNumber,
-            String vin) {
-
-        return new Car(
-                "Toyota",
-                "Corolla",
-                2024,
-                registrationNumber,
-                vin,
-                CarFuelType.GASOLINE,
-                CarTransmissionType.AUTOMATIC,
-                CarBodyType.SEDAN,
-                5,
-                CarCategory.STANDARD,
-                "Gray",
-                new BigDecimal("199.99"),
-                "Samochód testowy"
-        );
-    }
-
     @Test
-    void shouldReturnCarWhenSearchStartsOnReservationEndDate() {
-        User user = new User(
-                "Anna",
-                "Nowak",
-                "anna.boundary@example.com",
-                "test-password-hash",
+    void shouldNotReturnCarBeforeFourHourTurnaroundHasPassed() {
+        User user = createAndSaveUser(
+                "anna.buffer@example.com",
                 "+48987654321"
         );
-
-        userRepository.saveAndFlush(user);
-
         Car car = createTestCar(
                 "BI33333",
                 "JTDBR32E720333333"
         );
-
         carRepository.saveAndFlush(car);
 
-        Reservation reservation = new Reservation(
+        reservationRepository.saveAndFlush(new Reservation(
                 user,
                 car,
-                LocalDate.of(2026, 11, 10),
-                LocalDate.of(2026, 11, 12),
-                new BigDecimal("399.98")
+                LocalDateTime.of(2026, 12, 1, 10, 0),
+                LocalDateTime.of(2026, 12, 3, 13, 0),
+                new BigDecimal("599.97")
+        ));
+
+        LocalDateTime requestedStart =
+                LocalDateTime.of(2026, 12, 3, 16, 30);
+        LocalDateTime requestedEnd =
+                LocalDateTime.of(2026, 12, 4, 12, 0);
+
+        List<Car> availableCars = carRepository.findAvailableCars(
+                requestedStart.minusHours(4),
+                requestedEnd.plusHours(4),
+                CarStatus.ACTIVE,
+                BLOCKING_STATUSES
         );
 
-        reservationRepository.saveAndFlush(reservation);
+        assertTrue(availableCars.isEmpty());
+    }
 
-        List<Car> availableCars =
-                carRepository.findAvailableCars(
-                        LocalDate.of(2026, 11, 12),
-                        LocalDate.of(2026, 11, 14),
-                        CarStatus.ACTIVE,
-                        List.of(
-                                ReservationStatus.PENDING,
-                                ReservationStatus.CONFIRMED,
-                                ReservationStatus.IN_PROGRESS
-                        )
-                );
+    @Test
+    void shouldReturnCarExactlyFourHoursAfterReturn() {
+        User user = createAndSaveUser(
+                "anna.boundary@example.com",
+                "+48777777777"
+        );
+        Car car = createTestCar(
+                "BI66666",
+                "JTDBR32E720666666"
+        );
+        carRepository.saveAndFlush(car);
+
+        reservationRepository.saveAndFlush(new Reservation(
+                user,
+                car,
+                LocalDateTime.of(2026, 12, 1, 10, 0),
+                LocalDateTime.of(2026, 12, 3, 13, 0),
+                new BigDecimal("599.97")
+        ));
+
+        LocalDateTime requestedStart =
+                LocalDateTime.of(2026, 12, 3, 17, 0);
+        LocalDateTime requestedEnd =
+                LocalDateTime.of(2026, 12, 4, 12, 0);
+
+        List<Car> availableCars = carRepository.findAvailableCars(
+                requestedStart.minusHours(4),
+                requestedEnd.plusHours(4),
+                CarStatus.ACTIVE,
+                BLOCKING_STATUSES
+        );
 
         assertEquals(1, availableCars.size());
-
-        assertEquals(
-                car.getId(),
-                availableCars.getFirst().getId()
-        );
+        assertEquals(car.getId(), availableCars.getFirst().getId());
     }
 
     @Test
@@ -232,22 +231,15 @@ class CarRepositoryIntegrationTest {
                 "BI44444",
                 "JTDBR32E720444444"
         );
-
         car.changeStatus(CarStatus.IN_SERVICE);
-
         carRepository.saveAndFlush(car);
 
-        List<Car> availableCars =
-                carRepository.findAvailableCars(
-                        LocalDate.of(2026, 11, 20),
-                        LocalDate.of(2026, 11, 22),
-                        CarStatus.ACTIVE,
-                        List.of(
-                                ReservationStatus.PENDING,
-                                ReservationStatus.CONFIRMED,
-                                ReservationStatus.IN_PROGRESS
-                        )
-                );
+        List<Car> availableCars = carRepository.findAvailableCars(
+                LocalDateTime.of(2026, 11, 20, 6, 0),
+                LocalDateTime.of(2026, 11, 22, 14, 0),
+                CarStatus.ACTIVE,
+                BLOCKING_STATUSES
+        );
 
         assertTrue(availableCars.isEmpty());
     }
@@ -285,4 +277,41 @@ class CarRepositoryIntegrationTest {
         );
     }
 
+    private User createAndSaveUser(String email, String phoneNumber) {
+        return userRepository.saveAndFlush(new User(
+                "Anna",
+                "Nowak",
+                email,
+                "test-password-hash",
+                phoneNumber
+        ));
+    }
+
+    private Car createTestCar() {
+        return createTestCar(
+                "BI12345",
+                "JTDBR32E720123456"
+        );
+    }
+
+    private Car createTestCar(
+            String registrationNumber,
+            String vin) {
+
+        return new Car(
+                "Toyota",
+                "Corolla",
+                2024,
+                registrationNumber,
+                vin,
+                CarFuelType.GASOLINE,
+                CarTransmissionType.AUTOMATIC,
+                CarBodyType.SEDAN,
+                5,
+                CarCategory.STANDARD,
+                "Gray",
+                new BigDecimal("199.99"),
+                "Samochód testowy"
+        );
+    }
 }

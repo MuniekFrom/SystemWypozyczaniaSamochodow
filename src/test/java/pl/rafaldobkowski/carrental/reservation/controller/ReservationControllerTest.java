@@ -23,7 +23,7 @@ import pl.rafaldobkowski.carrental.security.SecurityConfig;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -51,8 +51,8 @@ class ReservationControllerTest {
     void shouldCreateReservationForAuthenticatedUser()
             throws Exception {
 
-        LocalDate startDate = LocalDate.now().plusDays(2);
-        LocalDate endDate = LocalDate.now().plusDays(5);
+        LocalDateTime startAt = futureSlot(2);
+        LocalDateTime endAt = futureSlot(5);
 
         ReservationResponse response =
                 new ReservationResponse(
@@ -62,8 +62,8 @@ class ReservationControllerTest {
                         2L,
                         "Toyota",
                         "Corolla",
-                        startDate,
-                        endDate,
+                        startAt,
+                        endAt,
                         new BigDecimal("599.97"),
                         ReservationStatus.PENDING,
                         Instant.parse("2026-10-12T10:00:00Z")
@@ -77,10 +77,10 @@ class ReservationControllerTest {
         String requestJson = """
                 {
                   "carId": 2,
-                  "startDate": "%s",
-                  "endDate": "%s"
+                  "startAt": "%s",
+                  "endAt": "%s"
                 }
-                """.formatted(startDate, endDate);
+                """.formatted(startAt, endAt);
 
         mockMvc.perform(
                         post("/api/reservations")
@@ -104,10 +104,10 @@ class ReservationControllerTest {
                         .value("Toyota"))
                 .andExpect(jsonPath("$.carModel")
                         .value("Corolla"))
-                .andExpect(jsonPath("$.startDate")
-                        .value(startDate.toString()))
-                .andExpect(jsonPath("$.endDate")
-                        .value(endDate.toString()))
+                .andExpect(jsonPath("$.startAt")
+                        .value(startAt.toString()))
+                .andExpect(jsonPath("$.endAt")
+                        .value(endAt.toString()))
                 .andExpect(jsonPath("$.totalPrice")
                         .value(599.97))
                 .andExpect(jsonPath("$.status")
@@ -129,12 +129,12 @@ class ReservationControllerTest {
         assertEquals(1L, userIdCaptor.getValue());
         assertEquals(2L, requestCaptor.getValue().carId());
         assertEquals(
-                startDate,
-                requestCaptor.getValue().startDate()
+                startAt,
+                requestCaptor.getValue().startAt()
         );
         assertEquals(
-                endDate,
-                requestCaptor.getValue().endDate()
+                endAt,
+                requestCaptor.getValue().endAt()
         );
     }
 
@@ -142,16 +142,16 @@ class ReservationControllerTest {
     void shouldReturnUnauthorizedWhenCreatingReservationWithoutToken()
             throws Exception {
 
-        LocalDate startDate = LocalDate.now().plusDays(2);
-        LocalDate endDate = LocalDate.now().plusDays(5);
+        LocalDateTime startAt = futureSlot(2);
+        LocalDateTime endAt = futureSlot(5);
 
         String requestJson = """
                 {
                   "carId": 2,
-                  "startDate": "%s",
-                  "endDate": "%s"
+                  "startAt": "%s",
+                  "endAt": "%s"
                 }
-                """.formatted(startDate, endDate);
+                """.formatted(startAt, endAt);
 
         mockMvc.perform(
                         post("/api/reservations")
@@ -169,16 +169,16 @@ class ReservationControllerTest {
     void shouldReturnBadRequestWhenCarIdIsMissing()
             throws Exception {
 
-        LocalDate startDate = LocalDate.now().plusDays(2);
-        LocalDate endDate = LocalDate.now().plusDays(5);
+        LocalDateTime startAt = futureSlot(2);
+        LocalDateTime endAt = futureSlot(5);
 
         String requestJson = """
             {
               "carId": null,
-              "startDate": "%s",
-              "endDate": "%s"
+              "startAt": "%s",
+              "endAt": "%s"
             }
-            """.formatted(startDate, endDate);
+            """.formatted(startAt, endAt);
 
         mockMvc.perform(
                         post("/api/reservations")
@@ -203,8 +203,8 @@ class ReservationControllerTest {
     void shouldReturnConflictWhenCarIsNotAvailable()
             throws Exception {
 
-        LocalDate startDate = LocalDate.now().plusDays(2);
-        LocalDate endDate = LocalDate.now().plusDays(5);
+        LocalDateTime startAt = futureSlot(2);
+        LocalDateTime endAt = futureSlot(5);
 
         String message =
                 "Car is not available in selected period";
@@ -217,10 +217,10 @@ class ReservationControllerTest {
         String requestJson = """
             {
               "carId": 2,
-              "startDate": "%s",
-              "endDate": "%s"
+              "startAt": "%s",
+              "endAt": "%s"
             }
-            """.formatted(startDate, endDate);
+            """.formatted(startAt, endAt);
 
         mockMvc.perform(
                         post("/api/reservations")
@@ -249,8 +249,8 @@ class ReservationControllerTest {
     void shouldReturnBadRequestWhenEndDateIsBeforeStartDate()
             throws Exception {
 
-        LocalDate startDate = LocalDate.now().plusDays(5);
-        LocalDate endDate = LocalDate.now().plusDays(3);
+        LocalDateTime startAt = futureSlot(5);
+        LocalDateTime endAt = futureSlot(3);
 
         String message =
                 "End date must be after start date";
@@ -265,10 +265,10 @@ class ReservationControllerTest {
         String requestJson = """
             {
               "carId": 2,
-              "startDate": "%s",
-              "endDate": "%s"
+              "startAt": "%s",
+              "endAt": "%s"
             }
-            """.formatted(startDate, endDate);
+            """.formatted(startAt, endAt);
 
         mockMvc.perform(
                         post("/api/reservations")
@@ -304,8 +304,8 @@ class ReservationControllerTest {
                 2L,
                 "Toyota",
                 "Corolla",
-                LocalDate.of(2026, 11, 10),
-                LocalDate.of(2026, 11, 12),
+                LocalDateTime.of(2026, 11, 10, 10, 0),
+                LocalDateTime.of(2026, 11, 12, 13, 0),
                 new BigDecimal("399.98"),
                 ReservationStatus.PENDING,
                 Instant.parse("2026-10-14T10:00:00Z")
@@ -327,8 +327,8 @@ class ReservationControllerTest {
                 .andExpect(jsonPath("$[0].carId").value(2))
                 .andExpect(jsonPath("$[0].carBrand").value("Toyota"))
                 .andExpect(jsonPath("$[0].carModel").value("Corolla"))
-                .andExpect(jsonPath("$[0].startDate").value("2026-11-10"))
-                .andExpect(jsonPath("$[0].endDate").value("2026-11-12"))
+                .andExpect(jsonPath("$[0].startAt").value("2026-11-10T10:00"))
+                .andExpect(jsonPath("$[0].endAt").value("2026-11-12T13:00"))
                 .andExpect(jsonPath("$[0].totalPrice").value(399.98))
                 .andExpect(jsonPath("$[0].status").value("PENDING"));
 
@@ -360,8 +360,8 @@ class ReservationControllerTest {
                 2L,
                 "Toyota",
                 "Corolla",
-                LocalDate.of(2026, 11, 10),
-                LocalDate.of(2026, 11, 12),
+                LocalDateTime.of(2026, 11, 10, 10, 0),
+                LocalDateTime.of(2026, 11, 12, 13, 0),
                 new BigDecimal("399.98"),
                 ReservationStatus.CANCELLED,
                 Instant.parse("2026-10-14T10:00:00Z")
@@ -474,8 +474,8 @@ class ReservationControllerTest {
                 2L,
                 "Toyota",
                 "Corolla",
-                LocalDate.of(2026, 11, 10),
-                LocalDate.of(2026, 11, 12),
+                LocalDateTime.of(2026, 11, 10, 10, 0),
+                LocalDateTime.of(2026, 11, 12, 13, 0),
                 new BigDecimal("399.98"),
                 ReservationStatus.PENDING,
                 Instant.parse("2026-10-14T10:00:00Z")
@@ -542,8 +542,8 @@ class ReservationControllerTest {
                 2L,
                 "Toyota",
                 "Corolla",
-                LocalDate.of(2026, 11, 10),
-                LocalDate.of(2026, 11, 12),
+                LocalDateTime.of(2026, 11, 10, 10, 0),
+                LocalDateTime.of(2026, 11, 12, 13, 0),
                 new BigDecimal("399.98"),
                 ReservationStatus.CONFIRMED,
                 Instant.parse("2026-10-14T10:00:00Z")
@@ -669,8 +669,8 @@ class ReservationControllerTest {
                 2L,
                 "Toyota",
                 "Corolla",
-                LocalDate.of(2026, 11, 10),
-                LocalDate.of(2026, 11, 12),
+                LocalDateTime.of(2026, 11, 10, 10, 0),
+                LocalDateTime.of(2026, 11, 12, 13, 0),
                 new BigDecimal("399.98"),
                 ReservationStatus.COMPLETED,
                 Instant.parse("2026-10-14T10:00:00Z")
@@ -796,8 +796,8 @@ class ReservationControllerTest {
                 3L,
                 "Toyota",
                 "Corolla",
-                LocalDate.of(2026, 11, 10),
-                LocalDate.of(2026, 11, 12),
+                LocalDateTime.of(2026, 11, 10, 10, 0),
+                LocalDateTime.of(2026, 11, 12, 13, 0),
                 new BigDecimal("399.98"),
                 ReservationStatus.IN_PROGRESS,
                 Instant.parse("2026-10-21T10:00:00Z")
@@ -922,6 +922,15 @@ class ReservationControllerTest {
                 .authorities(
                         new SimpleGrantedAuthority("ROLE_CLIENT")
                 );
+    }
+
+    private LocalDateTime futureSlot(long days) {
+        return LocalDateTime.now()
+                .plusDays(days)
+                .withHour(10)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
     }
 
 }

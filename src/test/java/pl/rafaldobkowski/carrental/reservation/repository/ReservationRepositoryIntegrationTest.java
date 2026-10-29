@@ -1,5 +1,6 @@
 package pl.rafaldobkowski.carrental.reservation.repository;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -8,7 +9,11 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.mysql.MySQLContainer;
-import pl.rafaldobkowski.carrental.car.model.*;
+import pl.rafaldobkowski.carrental.car.model.Car;
+import pl.rafaldobkowski.carrental.car.model.CarBodyType;
+import pl.rafaldobkowski.carrental.car.model.CarCategory;
+import pl.rafaldobkowski.carrental.car.model.CarFuelType;
+import pl.rafaldobkowski.carrental.car.model.CarTransmissionType;
 import pl.rafaldobkowski.carrental.car.repository.CarRepository;
 import pl.rafaldobkowski.carrental.reservation.model.Reservation;
 import pl.rafaldobkowski.carrental.reservation.model.ReservationStatus;
@@ -16,15 +21,12 @@ import pl.rafaldobkowski.carrental.user.model.User;
 import pl.rafaldobkowski.carrental.user.repository.UserRepository;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import org.junit.jupiter.api.BeforeEach;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @DataJpaTest
 @Testcontainers
@@ -32,6 +34,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
         replace = AutoConfigureTestDatabase.Replace.NONE
 )
 class ReservationRepositoryIntegrationTest {
+
+    private static final List<ReservationStatus> BLOCKING_STATUSES =
+            List.of(
+                    ReservationStatus.PENDING,
+                    ReservationStatus.CONFIRMED,
+                    ReservationStatus.IN_PROGRESS
+            );
 
     @Container
     @ServiceConnection
@@ -48,7 +57,6 @@ class ReservationRepositoryIntegrationTest {
     private CarRepository carRepository;
 
     private User user;
-
     private Car car;
 
     @BeforeEach
@@ -83,13 +91,9 @@ class ReservationRepositoryIntegrationTest {
 
     @Test
     void shouldDetectOverlappingReservation() {
-
-        Reservation reservation = new Reservation(
-                user,
-                car,
-                LocalDate.of(2026, 11, 10),
-                LocalDate.of(2026, 11, 12),
-                new BigDecimal("399.98")
+        Reservation reservation = createReservation(
+                LocalDateTime.of(2026, 11, 10, 10, 0),
+                LocalDateTime.of(2026, 11, 12, 13, 0)
         );
 
         Reservation savedReservation =
@@ -97,44 +101,63 @@ class ReservationRepositoryIntegrationTest {
 
         assertNotNull(savedReservation.getId());
 
+        LocalDateTime requestedStart =
+                LocalDateTime.of(2026, 11, 11, 10, 0);
+        LocalDateTime requestedEnd =
+                LocalDateTime.of(2026, 11, 14, 10, 0);
+
         boolean overlap =
                 reservationRepository.existsOverlappingReservation(
                         car.getId(),
-                        LocalDate.of(2026, 11, 11),
-                        LocalDate.of(2026, 11, 14),
-                        List.of(
-                                ReservationStatus.PENDING,
-                                ReservationStatus.CONFIRMED,
-                                ReservationStatus.IN_PROGRESS
-                        )
+                        requestedStart.minusHours(4),
+                        requestedEnd.plusHours(4),
+                        BLOCKING_STATUSES
                 );
 
         assertTrue(overlap);
     }
 
-
     @Test
-    void shouldNotDetectOverlapWhenNewReservationStartsOnEndDate() {
-        Reservation reservation = new Reservation(
-                user,
-                car,
-                LocalDate.of(2026, 11, 10),
-                LocalDate.of(2026, 11, 12),
-                new BigDecimal("399.98")
-        );
+    void shouldDetectOverlapDuringFourHourTurnaroundBuffer() {
+        reservationRepository.saveAndFlush(createReservation(
+                LocalDateTime.of(2026, 12, 1, 10, 0),
+                LocalDateTime.of(2026, 12, 3, 13, 0)
+        ));
 
-        reservationRepository.saveAndFlush(reservation);
+        LocalDateTime requestedStart =
+                LocalDateTime.of(2026, 12, 3, 16, 30);
+        LocalDateTime requestedEnd =
+                LocalDateTime.of(2026, 12, 4, 10, 0);
 
         boolean overlap =
                 reservationRepository.existsOverlappingReservation(
                         car.getId(),
-                        LocalDate.of(2026, 11, 12),
-                        LocalDate.of(2026, 11, 14),
-                        List.of(
-                                ReservationStatus.PENDING,
-                                ReservationStatus.CONFIRMED,
-                                ReservationStatus.IN_PROGRESS
-                        )
+                        requestedStart.minusHours(4),
+                        requestedEnd.plusHours(4),
+                        BLOCKING_STATUSES
+                );
+
+        assertTrue(overlap);
+    }
+
+    @Test
+    void shouldAllowReservationStartingExactlyAfterFourHourBuffer() {
+        reservationRepository.saveAndFlush(createReservation(
+                LocalDateTime.of(2026, 12, 1, 10, 0),
+                LocalDateTime.of(2026, 12, 3, 13, 0)
+        ));
+
+        LocalDateTime requestedStart =
+                LocalDateTime.of(2026, 12, 3, 17, 0);
+        LocalDateTime requestedEnd =
+                LocalDateTime.of(2026, 12, 4, 10, 0);
+
+        boolean overlap =
+                reservationRepository.existsOverlappingReservation(
+                        car.getId(),
+                        requestedStart.minusHours(4),
+                        requestedEnd.plusHours(4),
+                        BLOCKING_STATUSES
                 );
 
         assertFalse(overlap);
@@ -142,12 +165,9 @@ class ReservationRepositoryIntegrationTest {
 
     @Test
     void shouldDetectOverlapForInProgressReservation() {
-        Reservation reservation = new Reservation(
-                user,
-                car,
-                LocalDate.of(2026, 11, 10),
-                LocalDate.of(2026, 11, 12),
-                new BigDecimal("399.98")
+        Reservation reservation = createReservation(
+                LocalDateTime.of(2026, 11, 10, 10, 0),
+                LocalDateTime.of(2026, 11, 12, 13, 0)
         );
 
         reservation.confirm();
@@ -155,18 +175,32 @@ class ReservationRepositoryIntegrationTest {
 
         reservationRepository.saveAndFlush(reservation);
 
+        LocalDateTime requestedStart =
+                LocalDateTime.of(2026, 11, 11, 10, 0);
+        LocalDateTime requestedEnd =
+                LocalDateTime.of(2026, 11, 14, 10, 0);
+
         boolean overlap =
                 reservationRepository.existsOverlappingReservation(
                         car.getId(),
-                        LocalDate.of(2026, 11, 11),
-                        LocalDate.of(2026, 11, 14),
-                        List.of(
-                                ReservationStatus.PENDING,
-                                ReservationStatus.CONFIRMED,
-                                ReservationStatus.IN_PROGRESS
-                        )
+                        requestedStart.minusHours(4),
+                        requestedEnd.plusHours(4),
+                        BLOCKING_STATUSES
                 );
 
         assertTrue(overlap);
+    }
+
+    private Reservation createReservation(
+            LocalDateTime startAt,
+            LocalDateTime endAt) {
+
+        return new Reservation(
+                user,
+                car,
+                startAt,
+                endAt,
+                new BigDecimal("399.98")
+        );
     }
 }

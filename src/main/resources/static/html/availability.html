@@ -57,8 +57,9 @@
                     <p class="availability-header__eyebrow">Wyszukiwarka</p>
                     <h1>Znajdź dostępny samochód</h1>
                     <p>
-                        Wybierz termin, a system odrzuci pojazdy mające
-                        kolidującą rezerwację.
+                        Wybierz datę i godzinę odbioru oraz zwrotu. System
+                        uwzględni rezerwacje i czterogodzinną przerwę
+                        potrzebną na przygotowanie samochodu.
                     </p>
                 </div>
 
@@ -69,8 +70,18 @@
                     </div>
 
                     <div class="form-field">
+                        <label class="form-label" for="start-time">Godzina odbioru</label>
+                        <select id="start-time" class="form-input" required></select>
+                    </div>
+
+                    <div class="form-field">
                         <label class="form-label" for="end-date">Data zwrotu</label>
                         <input id="end-date" class="form-input" type="date" required>
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label" for="end-time">Godzina zwrotu</label>
+                        <select id="end-time" class="form-input" required></select>
                     </div>
 
                     <button id="availability-submit" class="button button--primary" type="submit">

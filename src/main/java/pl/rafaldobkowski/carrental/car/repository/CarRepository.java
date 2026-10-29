@@ -7,11 +7,11 @@ import pl.rafaldobkowski.carrental.car.model.Car;
 import pl.rafaldobkowski.carrental.car.model.CarStatus;
 import pl.rafaldobkowski.carrental.reservation.model.ReservationStatus;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
-public interface CarRepository extends JpaRepository<Car,Long> {
+public interface CarRepository extends JpaRepository<Car, Long> {
 
     boolean existsByVin(String vin);
 
@@ -25,25 +25,30 @@ public interface CarRepository extends JpaRepository<Car,Long> {
     );
 
     @Query("""
-        SELECT c
-        FROM Car c
-        WHERE c.status = :carStatus
-          AND NOT EXISTS (
-              SELECT r.id
-              FROM Reservation r
-              WHERE r.car = c
-                AND r.status IN :reservationStatuses
-                AND r.startDate < :endDate
-                AND r.endDate > :startDate
-          )
-        ORDER BY c.id
-        """)
+            SELECT c
+            FROM Car c
+            WHERE c.status = :carStatus
+              AND NOT EXISTS (
+                  SELECT r.id
+                  FROM Reservation r
+                  WHERE r.car = c
+                    AND r.status IN :reservationStatuses
+                    AND r.startAt < :blockingWindowEnd
+                    AND r.endAt > :blockingWindowStart
+              )
+            ORDER BY c.id
+            """)
     List<Car> findAvailableCars(
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate,
-            @Param("carStatus") CarStatus carStatus,
+            @Param("blockingWindowStart")
+            LocalDateTime blockingWindowStart,
+
+            @Param("blockingWindowEnd")
+            LocalDateTime blockingWindowEnd,
+
+            @Param("carStatus")
+            CarStatus carStatus,
+
             @Param("reservationStatuses")
             Collection<ReservationStatus> reservationStatuses
     );
-
 }

@@ -134,9 +134,9 @@ export function getEnumLabel(value) {
 function createCarDetailsUrl(carId, options) {
     const query = new URLSearchParams({ id: String(carId) });
 
-    if (options.startDate && options.endDate) {
-        query.set("startDate", options.startDate);
-        query.set("endDate", options.endDate);
+    if (options.startAt && options.endAt) {
+        query.set("startAt", options.startAt);
+        query.set("endAt", options.endAt);
     }
 
     return `/html/car-details.html?${query.toString()}`;

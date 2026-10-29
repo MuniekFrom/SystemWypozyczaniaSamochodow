@@ -24,7 +24,7 @@ import pl.rafaldobkowski.carrental.user.model.User;
 import pl.rafaldobkowski.carrental.user.repository.UserRepository;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,14 +49,14 @@ class ReservationServiceTest {
 
     @Test
     void shouldRejectReservationWhenEndDateIsNotAfterStartDate() {
-        LocalDate startDate = LocalDate.now().plusDays(5);
-        LocalDate endDate = startDate.minusDays(1);
+        LocalDateTime startAt = futureSlot(5);
+        LocalDateTime endAt = startAt.minusDays(1);
 
         CreateReservationRequest request =
                 new CreateReservationRequest(
                         1L,
-                        startDate,
-                        endDate
+                        startAt,
+                        endAt
                 );
 
         InvalidReservationPeriodException exception =
@@ -69,7 +69,7 @@ class ReservationServiceTest {
                 );
 
         assertEquals(
-                "End date must be after start date",
+                "End date and time must be after start date and time",
                 exception.getMessage()
         );
 
@@ -82,14 +82,14 @@ class ReservationServiceTest {
 
     @Test
     void shouldRejectReservationWhenStartDateIsInThePast() {
-        LocalDate startDate = LocalDate.now().minusDays(1);
-        LocalDate endDate = LocalDate.now().plusDays(2);
+        LocalDateTime startAt = pastSlot(1);
+        LocalDateTime endAt = futureSlot(2);
 
         CreateReservationRequest request =
                 new CreateReservationRequest(
                         1L,
-                        startDate,
-                        endDate
+                        startAt,
+                        endAt
                 );
 
         InvalidReservationPeriodException exception =
@@ -102,7 +102,40 @@ class ReservationServiceTest {
                 );
 
         assertEquals(
-                "Start date cannot be in the past",
+                "Start date and time cannot be in the past",
+                exception.getMessage()
+        );
+
+        verifyNoInteractions(
+                userRepository,
+                carRepository,
+                reservationRepository
+        );
+    }
+
+    @Test
+    void shouldRejectReservationOutsideThirtyMinuteSlot() {
+        LocalDateTime startAt = futureSlot(1).plusMinutes(15);
+        LocalDateTime endAt = futureSlot(2);
+
+        CreateReservationRequest request =
+                new CreateReservationRequest(
+                        1L,
+                        startAt,
+                        endAt
+                );
+
+        InvalidReservationPeriodException exception =
+                assertThrows(
+                        InvalidReservationPeriodException.class,
+                        () -> reservationService.createReservation(
+                                1L,
+                                request
+                        )
+                );
+
+        assertEquals(
+                "Reservation times must use 30-minute intervals",
                 exception.getMessage()
         );
 
@@ -120,8 +153,8 @@ class ReservationServiceTest {
         CreateReservationRequest request =
                 new CreateReservationRequest(
                         1L,
-                        LocalDate.now().plusDays(1),
-                        LocalDate.now().plusDays(3)
+                        futureSlot(1),
+                        futureSlot(3)
                 );
 
         when(userRepository.findById(userId))
@@ -160,8 +193,8 @@ class ReservationServiceTest {
         CreateReservationRequest request =
                 new CreateReservationRequest(
                         1L,
-                        LocalDate.now().plusDays(1),
-                        LocalDate.now().plusDays(3)
+                        futureSlot(1),
+                        futureSlot(3)
                 );
 
         when(userRepository.findById(userId))
@@ -199,8 +232,8 @@ class ReservationServiceTest {
         CreateReservationRequest request =
                 new CreateReservationRequest(
                         carId,
-                        LocalDate.now().plusDays(1),
-                        LocalDate.now().plusDays(3)
+                        futureSlot(1),
+                        futureSlot(3)
                 );
 
         when(userRepository.findById(userId))
@@ -243,8 +276,8 @@ class ReservationServiceTest {
         CreateReservationRequest request =
                 new CreateReservationRequest(
                         carId,
-                        LocalDate.now().plusDays(1),
-                        LocalDate.now().plusDays(3)
+                        futureSlot(1),
+                        futureSlot(3)
                 );
 
         when(userRepository.findById(userId))
@@ -278,8 +311,8 @@ class ReservationServiceTest {
         Long userId = 1L;
         Long carId = 2L;
 
-        LocalDate startDate = LocalDate.now().plusDays(2);
-        LocalDate endDate = LocalDate.now().plusDays(5);
+        LocalDateTime startAt = futureSlot(2);
+        LocalDateTime endAt = futureSlot(5);
 
         User user = createTestUser();
 
@@ -291,8 +324,8 @@ class ReservationServiceTest {
         CreateReservationRequest request =
                 new CreateReservationRequest(
                         carId,
-                        startDate,
-                        endDate
+                        startAt,
+                        endAt
                 );
 
         when(userRepository.findById(userId))
@@ -303,8 +336,8 @@ class ReservationServiceTest {
 
         when(reservationRepository.existsOverlappingReservation(
                 carId,
-                startDate,
-                endDate,
+                startAt.minusHours(4),
+                endAt.plusHours(4),
                 List.of(
                         ReservationStatus.PENDING,
                         ReservationStatus.CONFIRMED,
@@ -329,8 +362,8 @@ class ReservationServiceTest {
         verify(reservationRepository)
                 .existsOverlappingReservation(
                         carId,
-                        startDate,
-                        endDate,
+                        startAt.minusHours(4),
+                        endAt.plusHours(4),
                         List.of(
                                 ReservationStatus.PENDING,
                                 ReservationStatus.CONFIRMED,
@@ -344,12 +377,12 @@ class ReservationServiceTest {
 
 
     @Test
-    void shouldCreateReservationAndCalculateTotalPrice() {
+    void shouldCreateReservationAndRoundPriceUpToStartedDay() {
         Long userId = 1L;
         Long carId = 2L;
 
-        LocalDate startDate = LocalDate.now().plusDays(2);
-        LocalDate endDate = LocalDate.now().plusDays(5);
+        LocalDateTime startAt = futureSlot(2);
+        LocalDateTime endAt = startAt.plusDays(2).plusHours(3);
 
         User user = mock(User.class);
         Car car = mock(Car.class);
@@ -369,8 +402,8 @@ class ReservationServiceTest {
         CreateReservationRequest request =
                 new CreateReservationRequest(
                         carId,
-                        startDate,
-                        endDate
+                        startAt,
+                        endAt
                 );
 
         when(userRepository.findById(userId))
@@ -381,8 +414,8 @@ class ReservationServiceTest {
 
         when(reservationRepository.existsOverlappingReservation(
                 carId,
-                startDate,
-                endDate,
+                startAt.minusHours(4),
+                endAt.plusHours(4),
                 List.of(
                         ReservationStatus.PENDING,
                         ReservationStatus.CONFIRMED,
@@ -407,8 +440,8 @@ class ReservationServiceTest {
                 response.userEmail());
         assertEquals("Toyota", response.carBrand());
         assertEquals("Corolla", response.carModel());
-        assertEquals(startDate, response.startDate());
-        assertEquals(endDate, response.endDate());
+        assertEquals(startAt, response.startAt());
+        assertEquals(endAt, response.endAt());
         assertEquals(
                 new BigDecimal("599.97"),
                 response.totalPrice()
@@ -472,14 +505,14 @@ class ReservationServiceTest {
 
         Car car = createTestCar();
 
-        LocalDate startDate = LocalDate.now().plusDays(1);
-        LocalDate endDate = startDate.plusDays(2);
+        LocalDateTime startAt = futureSlot(1);
+        LocalDateTime endAt = startAt.plusDays(2);
 
         Reservation reservation = new Reservation(
                 user,
                 car,
-                startDate,
-                endDate,
+                startAt,
+                endAt,
                 new BigDecimal("399.98")
         );
 
@@ -499,8 +532,8 @@ class ReservationServiceTest {
         assertEquals("anna.nowak@example.com", response.userEmail());
         assertEquals("Toyota", response.carBrand());
         assertEquals("Corolla", response.carModel());
-        assertEquals(startDate, response.startDate());
-        assertEquals(endDate, response.endDate());
+        assertEquals(startAt, response.startAt());
+        assertEquals(endAt, response.endAt());
         assertEquals(new BigDecimal("399.98"), response.totalPrice());
         assertEquals(ReservationStatus.PENDING, response.status());
 
@@ -521,8 +554,8 @@ class ReservationServiceTest {
         Reservation reservation = new Reservation(
                 user,
                 car,
-                LocalDate.now().plusDays(1),
-                LocalDate.now().plusDays(3),
+                futureSlot(1),
+                futureSlot(3),
                 new BigDecimal("399.98")
         );
 
@@ -589,8 +622,8 @@ class ReservationServiceTest {
         Reservation reservation = new Reservation(
                 user,
                 car,
-                LocalDate.now().plusDays(1),
-                LocalDate.now().plusDays(3),
+                futureSlot(1),
+                futureSlot(3),
                 new BigDecimal("399.98")
         );
 
@@ -629,14 +662,14 @@ class ReservationServiceTest {
         User user = createTestUser();
         Car car = createTestCar();
 
-        LocalDate startDate = LocalDate.now().plusDays(1);
-        LocalDate endDate = startDate.plusDays(2);
+        LocalDateTime startAt = futureSlot(1);
+        LocalDateTime endAt = startAt.plusDays(2);
 
         Reservation reservation = new Reservation(
                 user,
                 car,
-                startDate,
-                endDate,
+                startAt,
+                endAt,
                 new BigDecimal("399.98")
         );
 
@@ -653,8 +686,8 @@ class ReservationServiceTest {
         assertEquals("anna.nowak@example.com", response.userEmail());
         assertEquals("Toyota", response.carBrand());
         assertEquals("Corolla", response.carModel());
-        assertEquals(startDate, response.startDate());
-        assertEquals(endDate, response.endDate());
+        assertEquals(startAt, response.startAt());
+        assertEquals(endAt, response.endAt());
         assertEquals(new BigDecimal("399.98"), response.totalPrice());
         assertEquals(ReservationStatus.PENDING, response.status());
 
@@ -673,8 +706,8 @@ class ReservationServiceTest {
         Reservation reservation = new Reservation(
                 user,
                 car,
-                LocalDate.now().plusDays(1),
-                LocalDate.now().plusDays(3),
+                futureSlot(1),
+                futureSlot(3),
                 new BigDecimal("399.98")
         );
 
@@ -729,8 +762,8 @@ class ReservationServiceTest {
         Reservation reservation = new Reservation(
                 user,
                 car,
-                LocalDate.now().plusDays(1),
-                LocalDate.now().plusDays(3),
+                futureSlot(1),
+                futureSlot(3),
                 new BigDecimal("399.98")
         );
 
@@ -789,8 +822,8 @@ class ReservationServiceTest {
         Reservation reservation = new Reservation(
                 user,
                 car,
-                LocalDate.now().plusDays(1),
-                LocalDate.now().plusDays(3),
+                futureSlot(1),
+                futureSlot(3),
                 new BigDecimal("399.98")
         );
 
@@ -826,8 +859,8 @@ class ReservationServiceTest {
         Reservation reservation = new Reservation(
                 user,
                 car,
-                LocalDate.now().plusDays(1),
-                LocalDate.now().plusDays(3),
+                futureSlot(1),
+                futureSlot(3),
                 new BigDecimal("399.98")
         );
 
@@ -864,8 +897,8 @@ class ReservationServiceTest {
         Reservation reservation = new Reservation(
                 user,
                 car,
-                LocalDate.now().plusDays(1),
-                LocalDate.now().plusDays(3),
+                futureSlot(1),
+                futureSlot(3),
                 new BigDecimal("399.98")
         );
 
@@ -922,8 +955,8 @@ class ReservationServiceTest {
         Reservation reservation = new Reservation(
                 user,
                 car,
-                LocalDate.of(2026, 11, 10),
-                LocalDate.of(2026, 11, 12),
+                LocalDateTime.of(2026, 11, 10, 10, 0),
+                LocalDateTime.of(2026, 11, 12, 10, 0),
                 new BigDecimal("399.98")
         );
 
@@ -946,6 +979,24 @@ class ReservationServiceTest {
         );
 
         verify(reservationRepository).findById(reservationId);
+    }
+
+    private LocalDateTime futureSlot(long daysFromNow) {
+        return LocalDateTime.now()
+                .plusDays(daysFromNow)
+                .withHour(10)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
+    }
+
+    private LocalDateTime pastSlot(long daysBeforeNow) {
+        return LocalDateTime.now()
+                .minusDays(daysBeforeNow)
+                .withHour(10)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
     }
 
     private User createTestUser(){

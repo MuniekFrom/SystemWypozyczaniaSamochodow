@@ -70,9 +70,15 @@ async function handleLogin(event) {
 
         setAuthStatus(status, "Logowanie zakończone. Przenosimy Cię do konta...", "success");
 
-        const role = getRoleFromToken(response.accessToken);
+        const role = getRoleFromToken(
+            response.accessToken
+        );
+
+        const redirectUrl =
+            getRedirectUrlAfterLogin(role);
+
         window.setTimeout(() => {
-            window.location.assign(getDashboardUrl(role));
+            window.location.assign(redirectUrl);
         }, 500);
     } catch (error) {
         setAuthStatus(status, translateAuthError(error, "login"), "error");
@@ -82,5 +88,49 @@ async function handleLogin(event) {
             idle: "Zaloguj się",
             loading: "Logowanie..."
         });
+    }
+}
+
+function getRedirectUrlAfterLogin(role) {
+    const defaultUrl =
+        getDashboardUrl(role);
+
+    if (role !== "CLIENT") {
+        return defaultUrl;
+    }
+
+    const query =
+        new URLSearchParams(
+            window.location.search
+        );
+
+    const requestedRedirect =
+        query.get("redirect");
+
+    if (!requestedRedirect) {
+        return defaultUrl;
+    }
+
+    try {
+        const redirectUrl =
+            new URL(
+                requestedRedirect,
+                window.location.origin
+            );
+
+        if (
+            redirectUrl.origin
+            !== window.location.origin
+        ) {
+            return defaultUrl;
+        }
+
+        return (
+            redirectUrl.pathname
+            + redirectUrl.search
+            + redirectUrl.hash
+        );
+    } catch {
+        return defaultUrl;
     }
 }

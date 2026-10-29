@@ -6,7 +6,7 @@ import pl.rafaldobkowski.carrental.reservation.exception.InvalidReservationStatu
 import pl.rafaldobkowski.carrental.user.model.User;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -83,62 +83,6 @@ class ReservationTest {
     }
 
     @Test
-    void shouldRejectCompletingConfirmedReservation() {
-        Reservation reservation = createTestReservation();
-
-        reservation.confirm();
-
-        InvalidReservationStatusException exception = assertThrows(
-                InvalidReservationStatusException.class,
-                reservation::complete
-        );
-
-        assertEquals(
-                "Only in-progress reservations can be completed",
-                exception.getMessage()
-        );
-
-        assertEquals(
-                ReservationStatus.CONFIRMED,
-                reservation.getStatus()
-        );
-    }
-
-    @Test
-    void shouldRejectCompletingPendingReservation() {
-        Reservation reservation = createTestReservation();
-
-        InvalidReservationStatusException exception = assertThrows(
-                InvalidReservationStatusException.class,
-                reservation::complete
-        );
-
-        assertEquals(
-                "Only in-progress reservations can be completed",
-                exception.getMessage()
-        );
-
-        assertEquals(
-                ReservationStatus.PENDING,
-                reservation.getStatus()
-        );
-    }
-
-    @Test
-    void shouldCompleteInProgressReservation() {
-        Reservation reservation = createTestReservation();
-
-        reservation.confirm();
-        reservation.startRental();
-        reservation.complete();
-
-        assertEquals(
-                ReservationStatus.COMPLETED,
-                reservation.getStatus()
-        );
-    }
-
-    @Test
     void shouldStartConfirmedReservation() {
         Reservation reservation = createTestReservation();
 
@@ -171,17 +115,79 @@ class ReservationTest {
         );
     }
 
+    @Test
+    void shouldRejectCompletingConfirmedReservation() {
+        Reservation reservation = createTestReservation();
+
+        reservation.confirm();
+
+        InvalidReservationStatusException exception = assertThrows(
+                InvalidReservationStatusException.class,
+                reservation::complete
+        );
+
+        assertEquals(
+                "Only in-progress reservations can be completed",
+                exception.getMessage()
+        );
+
+        assertEquals(
+                ReservationStatus.CONFIRMED,
+                reservation.getStatus()
+        );
+    }
+
+    @Test
+    void shouldCompleteInProgressReservation() {
+        Reservation reservation = createTestReservation();
+
+        reservation.confirm();
+        reservation.startRental();
+        reservation.complete();
+
+        assertEquals(
+                ReservationStatus.COMPLETED,
+                reservation.getStatus()
+        );
+    }
+
+    @Test
+    void shouldRejectCompletingPendingReservation() {
+        Reservation reservation = createTestReservation();
+
+        InvalidReservationStatusException exception = assertThrows(
+                InvalidReservationStatusException.class,
+                reservation::complete
+        );
+
+        assertEquals(
+                "Only in-progress reservations can be completed",
+                exception.getMessage()
+        );
+
+        assertEquals(
+                ReservationStatus.PENDING,
+                reservation.getStatus()
+        );
+    }
+
     private Reservation createTestReservation() {
         User user = mock(User.class);
         Car car = mock(Car.class);
 
+        LocalDateTime startAt = LocalDateTime.now()
+                .plusDays(1)
+                .withHour(10)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
+
         return new Reservation(
                 user,
                 car,
-                LocalDate.now().plusDays(1),
-                LocalDate.now().plusDays(3),
+                startAt,
+                startAt.plusDays(2),
                 new BigDecimal("399.98")
         );
     }
-
 }

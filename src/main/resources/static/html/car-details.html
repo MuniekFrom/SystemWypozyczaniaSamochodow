@@ -23,11 +23,11 @@
 
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/components/site-header.css">
     <link rel="stylesheet" href="/css/components/page-loader.css">
     <link rel="stylesheet" href="/css/pages/car-details.css">
     <script src="/js/core/theme-bootstrap.js"></script>
 
-    <link rel="stylesheet" href="/css/components/page-loader.css">
     <link rel="stylesheet" href="/css/components/page-loader-theme.css">
     <noscript>
         <style>
@@ -86,7 +86,7 @@
 
 <div class="page-content">
 
-    <header class="site-header">
+    <header id="site-header" class="site-header">
         <div class="container site-header__content">
 
             <a
@@ -344,7 +344,8 @@
                             <h2>Sprawdź termin wynajmu</h2>
 
                             <p>
-                                Wybierz datę odbioru oraz zwrotu.
+                                Wybierz datę i godzinę odbioru oraz zwrotu.
+                                Niedostępne godziny są wyszarzone.
                             </p>
 
                             <form
@@ -371,6 +372,22 @@
                                 <div class="form-field">
                                     <label
                                             class="form-label"
+                                            for="details-start-time"
+                                    >
+                                        Godzina odbioru
+                                    </label>
+
+                                    <select
+                                            id="details-start-time"
+                                            class="form-input"
+                                            name="startTime"
+                                            required
+                                    ></select>
+                                </div>
+
+                                <div class="form-field">
+                                    <label
+                                            class="form-label"
                                             for="details-end-date"
                                     >
                                         Data zwrotu
@@ -383,6 +400,22 @@
                                             type="date"
                                             required
                                     >
+                                </div>
+
+                                <div class="form-field">
+                                    <label
+                                            class="form-label"
+                                            for="details-end-time"
+                                    >
+                                        Godzina zwrotu
+                                    </label>
+
+                                    <select
+                                            id="details-end-time"
+                                            class="form-input"
+                                            name="endTime"
+                                            required
+                                    ></select>
                                 </div>
 
                                 <button
@@ -400,7 +433,7 @@
                                     hidden
                             >
                                 <div>
-                                    <span>Liczba dni</span>
+                                    <span>Liczba rozliczanych dób</span>
                                     <strong id="rental-days"></strong>
                                 </div>
 

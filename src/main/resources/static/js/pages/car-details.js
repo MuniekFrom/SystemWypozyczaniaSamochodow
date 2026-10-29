@@ -1,5 +1,7 @@
 import {
+    createReservation,
     getAvailableCars,
+    getCarAvailabilitySlots,
     getCarById
 } from "/js/core/api.js";
 
@@ -12,8 +14,13 @@ import {
 } from "/js/core/page-loader.js";
 
 import {
-    initThemeSettings
-} from "/js/core/theme.js";
+    getAccessToken,
+    getRoleFromToken
+} from "/js/core/auth.js";
+
+import {
+    renderSiteHeader
+} from "/js/components/site-header.js";
 
 const priceFormatter = new Intl.NumberFormat(
     "pl-PL",
@@ -121,7 +128,7 @@ let selectedCar = null;
 let galleryImages = [];
 let selectedImageIndex = 0;
 
-initThemeSettings();
+renderSiteHeader("fleet");
 initPageLoader();
 initCarDetailsPage();
 
@@ -151,7 +158,7 @@ async function initCarDetailsPage() {
         showCarContent();
 
         const hasDates =
-            loadDatesFromAddress();
+            await loadDatesFromAddress();
 
         if (hasDates) {
             await checkSelectedCarAvailability();
@@ -501,71 +508,66 @@ function renderSpecifications(car) {
 }
 
 function initializeAvailabilityForm() {
-    const form =
-        document.querySelector(
-            "#car-availability-form"
-        );
-
-    const startDateInput =
-        document.querySelector(
-            "#details-start-date"
-        );
-
-    const endDateInput =
-        document.querySelector(
-            "#details-end-date"
-        );
+    const form = document.querySelector("#car-availability-form");
+    const startDateInput = document.querySelector("#details-start-date");
+    const startTimeInput = document.querySelector("#details-start-time");
+    const endDateInput = document.querySelector("#details-end-date");
+    const endTimeInput = document.querySelector("#details-end-time");
 
     if (
         !form
         || !startDateInput
+        || !startTimeInput
         || !endDateInput
+        || !endTimeInput
     ) {
         return;
     }
 
-    const today =
-        formatDate(new Date());
-
+    const today = formatDate(new Date());
     startDateInput.min = today;
     endDateInput.min = today;
 
-    startDateInput.addEventListener(
-        "change",
-        () => {
-            updateEndDateMinimum(
-                startDateInput,
-                endDateInput
-            );
+    startDateInput.addEventListener("change", async () => {
+        updateEndDateMinimum(startDateInput, endDateInput);
+        await refreshDateSlots("start");
 
-            updatePriceSummary();
-            resetAvailabilityResult();
+        if (!endDateInput.value) {
+            endDateInput.value = startDateInput.value;
         }
-    );
 
-    endDateInput.addEventListener(
-        "change",
-        () => {
-            updatePriceSummary();
-            resetAvailabilityResult();
-        }
-    );
+        await refreshDateSlots("end");
+        updateEndTimeOptions();
+        updatePriceSummary();
+        resetAvailabilityResult();
+    });
 
-    form.addEventListener(
-        "submit",
-        async event => {
-            event.preventDefault();
+    startTimeInput.addEventListener("change", () => {
+        updateEndTimeOptions();
+        updatePriceSummary();
+        resetAvailabilityResult();
+    });
 
-            await checkSelectedCarAvailability();
-        }
-    );
+    endDateInput.addEventListener("change", async () => {
+        await refreshDateSlots("end");
+        updateEndTimeOptions();
+        updatePriceSummary();
+        resetAvailabilityResult();
+    });
+
+    endTimeInput.addEventListener("change", () => {
+        updatePriceSummary();
+        resetAvailabilityResult();
+    });
+
+    form.addEventListener("submit", async event => {
+        event.preventDefault();
+        await checkSelectedCarAvailability();
+    });
 
     document
         .querySelector("#reservation-link")
-        ?.addEventListener(
-            "click",
-            savePendingReservation
-        );
+        ?.addEventListener("click", handleReservationAction);
 }
 
 function getColorLabel(color) {
@@ -582,57 +584,50 @@ function getColorLabel(color) {
     return colorLabels[normalizedColor] ?? color;
 }
 
-function loadDatesFromAddress() {
-    const query =
-        new URLSearchParams(
-            window.location.search
-        );
-
-    const startDate =
-        query.get("startDate");
-
-    const endDate =
-        query.get("endDate");
-
-    const startDateInput =
-        document.querySelector(
-            "#details-start-date"
-        );
-
-    const endDateInput =
-        document.querySelector(
-            "#details-end-date"
-        );
+async function loadDatesFromAddress() {
+    const query = new URLSearchParams(window.location.search);
+    const start = splitDateTime(query.get("startAt"));
+    const end = splitDateTime(query.get("endAt"));
+    const startDateInput = document.querySelector("#details-start-date");
+    const startTimeInput = document.querySelector("#details-start-time");
+    const endDateInput = document.querySelector("#details-end-date");
+    const endTimeInput = document.querySelector("#details-end-time");
 
     if (
-        !startDate
-        || !endDate
+        !start
+        || !end
         || !startDateInput
+        || !startTimeInput
         || !endDateInput
+        || !endTimeInput
     ) {
         return false;
     }
+
+    const startAt = `${start.date}T${start.time}`;
+    const endAt = `${end.date}T${end.time}`;
+
+    if (endAt <= startAt || start.date < startDateInput.min) {
+        return false;
+    }
+
+    startDateInput.value = start.date;
+    updateEndDateMinimum(startDateInput, endDateInput);
+    endDateInput.value = end.date;
+
+    await refreshDateSlots("start", start.time);
+    await refreshDateSlots("end", end.time);
+    updateEndTimeOptions();
 
     if (
-        endDate <= startDate
-        || startDate < startDateInput.min
+        startTimeInput.value !== start.time
+        || endTimeInput.value !== end.time
     ) {
+        resetAvailabilityResult();
         return false;
     }
-
-    startDateInput.value =
-        startDate;
-
-    updateEndDateMinimum(
-        startDateInput,
-        endDateInput
-    );
-
-    endDateInput.value =
-        endDate;
 
     updatePriceSummary();
-
     return true;
 }
 
@@ -641,28 +636,20 @@ async function checkSelectedCarAvailability() {
         return;
     }
 
-    const startDate =
-        document.querySelector(
-            "#details-start-date"
-        )?.value;
+    const period = getSelectedPeriod();
 
-    const endDate =
-        document.querySelector(
-            "#details-end-date"
-        )?.value;
-
-    if (!startDate || !endDate) {
+    if (!period) {
         showAvailabilityMessage(
-            "Wybierz datę odbioru i zwrotu.",
+            "Wybierz datę i godzinę odbioru oraz zwrotu.",
             "error"
         );
 
         return;
     }
 
-    if (endDate <= startDate) {
+    if (period.endAt <= period.startAt) {
         showAvailabilityMessage(
-            "Data zwrotu musi przypadać po dacie odbioru.",
+            "Termin zwrotu musi przypadać po terminie odbioru.",
             "error"
         );
 
@@ -701,8 +688,8 @@ async function checkSelectedCarAvailability() {
     try {
         const availableCars =
             await getAvailableCars(
-                startDate,
-                endDate
+                period.startAt,
+                period.endAt
             );
 
         const isAvailable =
@@ -713,8 +700,8 @@ async function checkSelectedCarAvailability() {
             );
 
         updateAddressDates(
-            startDate,
-            endDate
+            period.startAt,
+            period.endAt
         );
 
         updatePriceSummary();
@@ -751,38 +738,21 @@ function updatePriceSummary() {
         return;
     }
 
-    const startDate =
-        document.querySelector(
-            "#details-start-date"
-        )?.value;
-
-    const endDate =
-        document.querySelector(
-            "#details-end-date"
-        )?.value;
-
-    const summary =
-        document.querySelector(
-            "#price-summary"
-        );
+    const period = getSelectedPeriod();
+    const summary = document.querySelector("#price-summary");
 
     if (
-        !startDate
-        || !endDate
-        || endDate <= startDate
+        !period
+        || period.endAt <= period.startAt
     ) {
-        summary?.setAttribute(
-            "hidden",
-            ""
-        );
-
+        summary?.setAttribute("hidden", "");
         return;
     }
 
     const rentalDays =
         calculateRentalDays(
-            startDate,
-            endDate
+            period.startAt,
+            period.endAt
         );
 
     const totalPrice =
@@ -803,37 +773,25 @@ function updatePriceSummary() {
 }
 
 function calculateRentalDays(
-    startDate,
-    endDate
+    startAt,
+    endAt
 ) {
-    const start =
-        createUtcDate(startDate);
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+    const duration = getLocalDateTimeValue(endAt)
+        - getLocalDateTimeValue(startAt);
 
-    const end =
-        createUtcDate(endDate);
-
-    const millisecondsPerDay =
-        24 * 60 * 60 * 1000;
-
-    return Math.round(
-        (end - start) / millisecondsPerDay
+    return Math.max(
+        1,
+        Math.ceil(duration / millisecondsPerDay)
     );
 }
 
-function createUtcDate(dateValue) {
-    const [
-        year,
-        month,
-        day
-    ] = dateValue
-        .split("-")
-        .map(Number);
+function getLocalDateTimeValue(value) {
+    const [datePart, timePart] = value.split("T");
+    const [year, month, day] = datePart.split("-").map(Number);
+    const [hour, minute] = timePart.split(":").map(Number);
 
-    return Date.UTC(
-        year,
-        month - 1,
-        day
-    );
+    return Date.UTC(year, month - 1, day, hour, minute);
 }
 
 function updateEndDateMinimum(
@@ -844,11 +802,7 @@ function updateEndDateMinimum(
         return;
     }
 
-    const minimumEndDate =
-        addDays(
-            startDateInput.value,
-            1
-        );
+    const minimumEndDate = startDateInput.value;
 
     endDateInput.min =
         minimumEndDate;
@@ -864,8 +818,8 @@ function updateEndDateMinimum(
 }
 
 function updateAddressDates(
-    startDate,
-    endDate
+    startAt,
+    endAt
 ) {
     const query =
         new URLSearchParams(
@@ -878,13 +832,13 @@ function updateAddressDates(
     );
 
     query.set(
-        "startDate",
-        startDate
+        "startAt",
+        startAt
     );
 
     query.set(
-        "endDate",
-        endDate
+        "endAt",
+        endAt
     );
 
     window.history.replaceState(
@@ -894,22 +848,103 @@ function updateAddressDates(
     );
 }
 
+async function handleReservationAction(event) {
+    event.preventDefault();
+
+    if (!selectedCar) {
+        return;
+    }
+
+    const period = getSelectedPeriod();
+
+    if (!period || period.endAt <= period.startAt) {
+        showAvailabilityMessage(
+            "Najpierw wybierz termin wynajmu.",
+            "error"
+        );
+
+        return;
+    }
+
+    const accessToken = getAccessToken();
+
+    if (!accessToken) {
+        savePendingReservation();
+
+        const returnUrl =
+            `${window.location.pathname}${window.location.search}`;
+
+        window.location.assign(
+            `/html/login.html?redirect=${encodeURIComponent(returnUrl)}`
+        );
+
+        return;
+    }
+
+    const role = getRoleFromToken(accessToken);
+
+    if (role !== "CLIENT") {
+        showAvailabilityMessage(
+            "Rezerwację może utworzyć wyłącznie klient.",
+            "error"
+        );
+
+        return;
+    }
+
+    const reservationLink = event.currentTarget;
+
+    if (reservationLink.dataset.loading === "true") {
+        return;
+    }
+
+    reservationLink.dataset.loading = "true";
+    reservationLink.setAttribute("aria-disabled", "true");
+    reservationLink.textContent = "Tworzenie rezerwacji...";
+
+    try {
+        const createdReservation =
+            await createReservation({
+                carId: selectedCar.id,
+                startAt: period.startAt,
+                endAt: period.endAt
+            });
+
+        sessionStorage.removeItem(
+            "pendingReservation"
+        );
+
+        showAvailabilityMessage(
+            "Rezerwacja została utworzona.",
+            "success"
+        );
+
+        window.setTimeout(() => {
+            window.location.assign(
+                `/html/client.html?reservationCreated=${createdReservation.id}`
+            );
+        }, 600);
+    } catch (error) {
+        showAvailabilityMessage(
+            error.message
+            || "Nie udało się utworzyć rezerwacji.",
+            "error"
+        );
+    } finally {
+        delete reservationLink.dataset.loading;
+        reservationLink.removeAttribute("aria-disabled");
+        reservationLink.textContent = "Zarezerwuj samochód";
+    }
+}
+
 function savePendingReservation() {
     if (!selectedCar) {
         return;
     }
 
-    const startDate =
-        document.querySelector(
-            "#details-start-date"
-        )?.value;
+    const period = getSelectedPeriod();
 
-    const endDate =
-        document.querySelector(
-            "#details-end-date"
-        )?.value;
-
-    if (!startDate || !endDate) {
+    if (!period) {
         return;
     }
 
@@ -917,10 +952,130 @@ function savePendingReservation() {
         "pendingReservation",
         JSON.stringify({
             carId: selectedCar.id,
-            startDate,
-            endDate
+            startAt: period.startAt,
+            endAt: period.endAt
         })
     );
+}
+
+async function refreshDateSlots(kind, preferredTime = null) {
+    if (!selectedCar) {
+        return;
+    }
+
+    const isStart = kind === "start";
+    const dateInput = document.querySelector(
+        isStart ? "#details-start-date" : "#details-end-date"
+    );
+    const timeSelect = document.querySelector(
+        isStart ? "#details-start-time" : "#details-end-time"
+    );
+
+    if (!dateInput?.value || !timeSelect) {
+        return;
+    }
+
+    const previousValue = preferredTime ?? timeSelect.value;
+    timeSelect.disabled = true;
+    timeSelect.replaceChildren(new Option("Ładowanie godzin...", ""));
+
+    try {
+        const slots = await getCarAvailabilitySlots(
+            selectedCar.id,
+            dateInput.value
+        );
+
+        timeSelect.replaceChildren();
+
+        slots.forEach(slot => {
+            const option = new Option(
+                slot.available ? slot.time : `${slot.time} – niedostępna`,
+                slot.time
+            );
+
+            option.disabled = !slot.available;
+            option.dataset.apiAvailable = String(slot.available);
+            timeSelect.add(option);
+        });
+
+        const preferredOption = Array.from(timeSelect.options).find(
+            option => option.value === previousValue && !option.disabled
+        );
+
+        timeSelect.value = preferredOption?.value ?? "";
+
+        if (!timeSelect.value) {
+            selectFirstEnabledOption(timeSelect);
+        }
+    } catch (error) {
+        timeSelect.replaceChildren(
+            new Option("Nie udało się pobrać godzin", "")
+        );
+
+        showAvailabilityMessage(
+            error.message || "Nie udało się pobrać dostępnych godzin.",
+            "error"
+        );
+    } finally {
+        timeSelect.disabled = false;
+    }
+}
+
+function updateEndTimeOptions() {
+    const startDate = document.querySelector("#details-start-date")?.value;
+    const startTime = document.querySelector("#details-start-time")?.value;
+    const endDate = document.querySelector("#details-end-date")?.value;
+    const endTimeSelect = document.querySelector("#details-end-time");
+
+    if (!startDate || !startTime || !endDate || !endTimeSelect) {
+        return;
+    }
+
+    const sameDay = startDate === endDate;
+
+    Array.from(endTimeSelect.options).forEach(option => {
+        const apiAvailable = option.dataset.apiAvailable !== "false";
+        const afterStart = !sameDay || option.value > startTime;
+        option.disabled = !apiAvailable || !afterStart;
+
+        option.textContent = apiAvailable
+            ? option.value
+            : `${option.value} – niedostępna`;
+    });
+
+    if (endTimeSelect.selectedOptions[0]?.disabled) {
+        selectFirstEnabledOption(endTimeSelect);
+    }
+}
+
+function selectFirstEnabledOption(select) {
+    const option = Array.from(select.options).find(item => !item.disabled);
+    select.value = option?.value ?? "";
+}
+
+function getSelectedPeriod() {
+    const startDate = document.querySelector("#details-start-date")?.value;
+    const startTime = document.querySelector("#details-start-time")?.value;
+    const endDate = document.querySelector("#details-end-date")?.value;
+    const endTime = document.querySelector("#details-end-time")?.value;
+
+    if (!startDate || !startTime || !endDate || !endTime) {
+        return null;
+    }
+
+    return {
+        startAt: `${startDate}T${startTime}`,
+        endAt: `${endDate}T${endTime}`
+    };
+}
+
+function splitDateTime(value) {
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value ?? "")) {
+        return null;
+    }
+
+    const [date, time] = value.split("T");
+    return { date, time };
 }
 
 function showAvailabilityMessage(
@@ -971,9 +1126,34 @@ function resetAvailabilityResult() {
 }
 
 function showReservationLink() {
-    document
-        .querySelector("#reservation-link")
-        ?.removeAttribute("hidden");
+    const reservationLink =
+        document.querySelector(
+            "#reservation-link"
+        );
+
+    if (!reservationLink) {
+        return;
+    }
+
+    const accessToken = getAccessToken();
+    const role = accessToken
+        ? getRoleFromToken(accessToken)
+        : null;
+
+    if (role === "CLIENT") {
+        reservationLink.textContent =
+            "Zarezerwuj samochód";
+
+        reservationLink.href = "#";
+    } else {
+        reservationLink.textContent =
+            "Zaloguj się i zarezerwuj";
+
+        reservationLink.href =
+            "/html/login.html";
+    }
+
+    reservationLink.removeAttribute("hidden");
 }
 
 function hideReservationLink() {
@@ -1260,19 +1440,6 @@ function formatDate(date) {
         ).padStart(2, "0");
 
     return `${year}-${month}-${day}`;
-}
-
-function addDays(dateValue, days) {
-    const date =
-        new Date(
-            `${dateValue}T12:00:00`
-        );
-
-    date.setDate(
-        date.getDate() + days
-    );
-
-    return formatDate(date);
 }
 
 function getGalleryImagePosition(

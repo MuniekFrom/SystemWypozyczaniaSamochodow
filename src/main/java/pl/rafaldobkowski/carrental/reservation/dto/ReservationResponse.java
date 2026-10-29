@@ -1,10 +1,11 @@
 package pl.rafaldobkowski.carrental.reservation.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import pl.rafaldobkowski.carrental.reservation.model.ReservationStatus;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public record ReservationResponse(
         Long id,
@@ -16,8 +17,11 @@ public record ReservationResponse(
         String carBrand,
         String carModel,
 
-        LocalDate startDate,
-        LocalDate endDate,
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
+        LocalDateTime startAt,
+
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
+        LocalDateTime endAt,
 
         BigDecimal totalPrice,
         ReservationStatus status,
